@@ -4,6 +4,8 @@ The assignement 2 for robotics consisted of creating a **reactive** robot that c
 
 For this assignment, we built a Gazebo model which interacts with a ROS program to follow a wall closely.
 
+**DO NOT FORGET!!** Run `source catkin_ws/devel/setup.bash` in every terminal that is using the `reactive_bot` packages.
+
 ## Starting Gazebo
 
 To start Gazebo with all necessary ROS connections provided by the `gazebo_ros` package, execute:
@@ -13,6 +15,10 @@ To start Gazebo with all necessary ROS connections provided by the `gazebo_ros` 
 For a simple world, do:
 
 ```roslaunch gazebo_ros empty_world.launch```
+
+For our custom world, do:
+
+```roslaunch reactive_bot_gazebo reactive_bot.launch```
 
 ## Spawning a reactive bot
 

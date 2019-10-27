@@ -8,8 +8,11 @@ project(reactive_bot_description)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  gazebo_ros_pkgs
+  gazebo_msgs
+  geometry_msgs
   rospy
+  sensor_msgs
+  std_msgs
 )
 
 ## System dependencies are found with CMake's conventions
