@@ -34,4 +34,18 @@ For help:
 
 To spawn our custom reactive robot into the **already running world**:
 
-```rosrun gazebo_ros spawn_model -file `rospack find reactive_bot_gazebo`/models/my_reactive_robot.sdf -sdf -x 0 -y 0 -z 1 -model my_reactive_robot_0```
+```roslaunch reactive_bot_description spawn.launch model:=<name-of-entity>```
+
+## Visualizing the bot
+
+To visualize the bot, you can use Rviz to recreate the URDF information.
+
+A bug with URDF makes it impossible to visualize the bot, unless you export the following environmental variable:
+
+```export LC_NUMERIC="en_US.UTF-8"```
+
+Then you may use the Rviz laucher:
+
+```oslaunch reactive_bot_description rviz.launch```
+
+You must change the `Fixed Frame` from `Global Options` to `link_chassis` and then add a display of a `Robot Model`. 
