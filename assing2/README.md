@@ -46,6 +46,12 @@ A bug with URDF makes it impossible to visualize the bot, unless you export the 
 
 Then you may use the Rviz laucher:
 
-```oslaunch reactive_bot_description rviz.launch```
+```roslaunch reactive_bot_description rviz.launch```
 
-You must change the `Fixed Frame` from `Global Options` to `link_chassis` and then add a display of a `Robot Model`. 
+You must change the `Fixed Frame` from `Global Options` to `link_base` and then add a display of a `Robot Model` (if a config file is given to the Launch file, this can be done automatically). 
+
+## Controlling the bot
+
+Using keys:
+
+```rosrun reactive_bot_description diff_wheeled_robot_key.py```
