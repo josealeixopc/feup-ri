@@ -251,21 +251,23 @@
     </visual>
   </link>
   <joint name="joint_hukuyo" type="fixed">
-    <origin rpy="0 0 0" xyz="0.125 0 0.05"/>
+    <origin rpy="0 0 0" xyz="0.075 0 0.05"/>
     <parent link="link_base"/>
     <child link="link_hokuyo"/>
   </joint>
   <gazebo reference="link_hokuyo">
     <material>Gazebo/Blue</material>
     <turnGravityOff>false</turnGravityOff>
+
+    <!-- Reference: http://wiki.ros.org/urdf/XML/sensor and http://sdformat.org/spec?ver=1.6&elem=sensor-->
     <sensor name="head_hokuyo_sensor" type="ray">
       <pose>0.025 0 0 0 0 0</pose>
       <visualize>true</visualize>
-      <update_rate>40</update_rate>
+      <update_rate>20</update_rate>
       <ray>
         <scan>
           <horizontal>
-            <samples>720</samples>
+            <samples>1080</samples>
             <resolution>1</resolution>
             <min_angle>-3.14</min_angle>
             <max_angle>3.14</max_angle>
@@ -278,14 +280,18 @@
         </range>
       </ray>
       <plugin filename="libgazebo_ros_laser.so" name="gazebo_ros_hokuyo_controller">
-        <topicName>/scan</topicName>
+        <topicName>/reactive_bot/laser/scan</topicName>
         <frameName>link_hokuyo</frameName>
       </plugin>
     </sensor>
   </gazebo>
+
   <!-- Differential drive controller  -->
   <gazebo>
-    <plugin filename="libgazebo_ros_diff_drive.so" name="differential_drive_controller">
+    <!-- Issue with this plugin when deleting model in Gazebo: https://github.com/ros-simulation/gazebo_ros_pkgs/issues/123 -->
+    <!-- Therefore I created my own plugin in my_diff_drive package -->
+    <!-- <plugin filename="libgazebo_ros_diff_drive.so" name="differential_drive_controller"> -->
+    <plugin filename="my_ros_diff_drive.so" name="my_diff_drive">
       <rosDebugLevel>Debug</rosDebugLevel>
       <publishWheelTF>True</publishWheelTF>
       <publishTf>1</publishTf>
