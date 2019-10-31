@@ -52,6 +52,37 @@ SPEED_ANGULAR_MAX = 0.1  # in radian/second
 # Last message received
 MESSAGE_CURRENT = None
 
+# UTILITIES
+
+
+def calculate_closest_point(message):
+    """
+    Takes a message from the LaserScan and returns a tuple
+    (alpha1, d), which translates into the closest wall point from
+    the bot
+    """
+
+    closest_point_distance = min(message.ranges)
+    closest_point_index = message.ranges.index(closest_point_distance)
+
+    closest_point_angle = calculate_angle_of_ray(closest_point_index)
+
+    return (closest_point_angle, closest_point_distance)
+
+
+def calculate_angle_of_ray(angle_index):
+    return calculate_angle_of_ray_ext(SENSOR_HORIZONTAL_MIN_ANGLE,
+                                      SENSOR_HORIZONTAL_MAX_ANGLE,
+                                      SENSOR_HORIZONTAL_SAMPLING,
+                                      angle_index)
+
+
+def calculate_angle_of_ray_ext(min_angle, max_angle, resolution, angle_index):
+    step = (max_angle - min_angle) / resolution
+    angle_of_ray = min_angle + step * angle_index
+
+    return angle_of_ray
+
 
 class MovementController(object):
     def __init__(self):
@@ -69,71 +100,20 @@ class MovementController(object):
         self.turn = 1
 
         self.moveBindings = {
-            'i': (1, 0),
-            'o': (1, -1),
-            'j': (0, 1),
-            'l': (0, -1),
-            'u': (1, 1),
-            ',': (-1, 0),
-            '.': (-1, 1),
-            'm': (-1, -1),
+            'f': (1, 0),  # front
+            'fr': (1, -1),  # front-right
+            'l': (0, 1),  # left
+            'r': (0, -1),  # right
+            'fl': (1, 1),  # front-left
+            'b': (-1, 0),  # back
+            'bl': (-1, 1),  # back-left
+            'br': (-1, -1),  # back-right
         }
-
-        self.speedBindings = {
-            'q': (1.1, 1.1),
-            'z': (.9, .9),
-            'w': (1.1, 1),
-            'x': (.9, 1),
-            'e': (1, 1.1),
-            'c': (1, .9),
-        }
-
-    def print_controls(self):
-        msg = """
-Control Your Turtlebot!
----------------------------
-Moving around:
-u    i    o
-j    k    l
-m    ,    .
-q/z : increase/decrease max speeds by 10%
-w/x : increase/decrease only linear speed by 10%
-e/c : increase/decrease only angular speed by 10%
-space key, k : force stop
-anything else : stop smoothly
-CTRL-C to quit
-"""
-
-        print (msg)
 
     def print_vels(speed, turn):
         print "currently:\tspeed %s\tturn %s " % (speed, turn)
 
-    def get_twist(self, key):
-        if key in self.moveBindings.keys():
-            self.x = self.moveBindings[key][0]
-            self.th = self.moveBindings[key][1]
-            self.count = 0
-        elif key in self.speedBindings.keys():
-            self.speed = self.speed * self.speedBindings[key][0]
-            self.turn = self.turn * self.speedBindings[key][1]
-            self.count = 0
-
-            self.print_vels(self.speed, self.turn)
-            if (self.status == 14):
-                self.print_controls()
-            self.status = (self.status + 1) % 15
-        elif key == ' ' or key == 'k':
-            self.x = 0
-            self.th = 0
-            self.control_speed = 0
-            self.control_turn = 0
-        else:
-            self.count = self.count + 1
-            if self.count > 4:
-                self.x = 0
-                self.th = 0
-
+    def generate_twist(self):
         self.target_speed = self.speed * self.x
         self.target_turn = self.turn * self.th
 
@@ -163,6 +143,27 @@ CTRL-C to quit
 
         return twist
 
+    def get_twist_find_wall(self):
+        self.th = 1
+        self.x = 1.5
+
+        return self.generate_twist()
+
+    def get_twist_follow_wall(self, message):
+
+        (angle_to_wall, distance_to_wall) = calculate_closest_point(message)
+
+        if angle_to_wall == 0:
+            self.th = 0
+        elif angle_to_wall > 0:
+            self.th = -1
+        elif angle_to_wall < 0:
+            self.th = 1
+
+        self.x = 1
+
+        return self.generate_twist()
+
 
 class ReactiveBot(object):
     def __init__(self):
@@ -175,9 +176,12 @@ class ReactiveBot(object):
         to the controller topic.
         """
         if self.state == STATE_FIND_WALL:
-            return self.movement_controller.get_twist('o')
+            return self.movement_controller.get_twist_find_wall()
+        elif self.state == STATE_FOLLOW_WALL:
+            return self.movement_controller.get_twist_follow_wall(message)
         else:
-            return Twist()
+            print ("State is unkown. Has value '{}'.".format(self.state))
+            return Twist
 
     def is_wall_visible(self, ranges):
         return not all(math.isinf(r) for r in ranges)
@@ -213,26 +217,6 @@ def set_sensor_settings(message):
     SENSOR_ALREADY_SETUP = True
 
 
-def calculate_possible_walls(ranges):
-    """
-    Takes a message from the LaserScan and returns a list with tuples
-    (alpha1, alpha2, d), which translates into a possible wall that is
-    between angles alpha1 and alpha2 (rad), with closest point at
-    distance d (meters)
-    """
-
-    # possible_walls = []
-
-    # current_wall_begin_angle = None
-    # current_wall_end_angle = None
-    # current_wall_closes_distance = None
-
-    # for r in ranges:
-    #     break
-
-    # pass
-
-
 def laser_scan_callback(message):
     global MESSAGE_CURRENT
 
@@ -240,18 +224,6 @@ def laser_scan_callback(message):
         set_sensor_settings(message)
 
     MESSAGE_CURRENT = message  # Set global message to the last one received
-
-
-def calculate_angle_of_ray(min_angle, max_angle, resolution, angle_index):
-    step = (max_angle - min_angle) / resolution
-    angle_of_ray = min_angle + step * angle_index
-
-    return angle_of_ray
-
-
-def act():
-    # if STATE_CURRENT
-    pass
 
 
 def main():
@@ -270,7 +242,10 @@ def main():
         # Publishers/Subscribers API detailed here:
         # http://wiki.ros.org/rospy/Overview/Publishers%20and%20Subscribers
         laser_scan_subscriber = rospy.Subscriber(
-            SENSOR_TOPIC, LaserScan, callback=laser_scan_callback, queue_size=1)
+            SENSOR_TOPIC,
+            LaserScan,
+            callback=laser_scan_callback,
+            queue_size=1)
 
         controller_publisher = rospy.Publisher(
             CONTROLLER_TOPIC, Twist, queue_size=5)
