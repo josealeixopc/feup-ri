@@ -43,7 +43,9 @@ STATE_FIND_WALL = 0
 STATE_FOLLOW_WALL = 1
 
 # Wall-following settings
-WALL_FOLLOW_DISTANCE = 0.3  # in meter
+WALL_FOLLOW_DISTANCE = 1  # in meter
+WALL_FOLLOW_DISTANCE_TOLERANCE = 0.1
+WALL_FOLLOW_ANGLE_TOLERANCE = 0.05
 
 # Speed settings
 SPEED_LINEAR_MAX = 0.3  # in meter/second
@@ -153,12 +155,30 @@ class MovementController(object):
 
         (angle_to_wall, distance_to_wall) = calculate_closest_point(message)
 
-        if angle_to_wall == 0:
-            self.th = 0
-        elif angle_to_wall > 0:
-            self.th = -1
-        elif angle_to_wall < 0:
-            self.th = 1
+        if (distance_to_wall > WALL_FOLLOW_DISTANCE
+                + WALL_FOLLOW_DISTANCE_TOLERANCE):
+            # Go towards wall
+            if angle_to_wall == 0:
+                self.th = 0
+            elif angle_to_wall > 0:
+                self.th = -1
+            else:
+                self.th = 1
+        elif (distance_to_wall <
+              WALL_FOLLOW_DISTANCE - WALL_FOLLOW_DISTANCE_TOLERANCE):
+            if angle_to_wall > math.pi + WALL_FOLLOW_ANGLE_TOLERANCE:
+                self.th = -1
+            else:
+                self.th = 1
+        else:
+            # Circumvent wall with a clockwise trajectory
+            if (angle_to_wall <= math.pi + WALL_FOLLOW_ANGLE_TOLERANCE and
+                    angle_to_wall >= math.pi - WALL_FOLLOW_ANGLE_TOLERANCE):
+                self.th = 0
+            elif angle_to_wall > math.pi + WALL_FOLLOW_ANGLE_TOLERANCE:
+                self.th = -1
+            else:
+                self.th = 1
 
         self.x = 1
 

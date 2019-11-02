@@ -36,6 +36,8 @@ To spawn our custom reactive robot into the **already running world**:
 
 ```roslaunch reactive_bot_description spawn.launch model:=<name-of-entity>```
 
+**WARNING**: Because of a problem with the differential drive plugin, when the robot model is deleted, `ros_gazebo` crashes.
+
 ## Visualizing the bot
 
 To visualize the bot, you can use Rviz to recreate the URDF information.
