@@ -41,15 +41,16 @@ SENSOR_RANGE_MAX = None   # (in meters)
 
 # The states of the robot
 STATE_FIND_WALL = 0
-STATE_FOLLOW_WALL = 1
+STATE_GO_TO_WALL = 1
+STATE_FOLLOW_WALL = 2
 
 # Wall-following settings
 WALL_FOLLOW_DISTANCE = 0.5  # in meter
-WALL_FOLLOW_DISTANCE_TOLERANCE = 0.1
+WALL_FOLLOW_DISTANCE_TOLERANCE = 0.3
 WALL_FOLLOW_ANGLE_TOLERANCE = 0.05
 
 # Speed settings
-SPEED_LINEAR_MAX = 0.3  # in meter/second
+SPEED_LINEAR_MAX = 0.2  # in meter/second
 SPEED_ANGULAR_MAX = 0.1  # in radian/second
 
 # Last message received
@@ -92,8 +93,9 @@ class MovementController(object):
         self.speed = .5
         self.turn = 1
 
-        self.pid = PID(2.0, 3.0, 0.01, 0.2)
+        self.pid = PID(3.0, 0.01, 4.0, 0.2)
         self.distance_to_wall = None
+        self.angle_to_wall = None
 
     def print_vels(self):
         print "Currently:\tspeed %s\tturn %s " % (self.speed, self.turn)
@@ -115,15 +117,22 @@ class MovementController(object):
 
         return self.generate_twist()
 
-    def get_twist_follow_wall(self, message):
+    def get_twist_go_to_wall(self):
 
-        (current_angle_to_wall,
-            current_distance_to_wall) = calculate_closest_point(message)
+        self.turn = self.angle_to_wall
+        self.speed = 0.2
 
-        self.distance_to_wall = current_distance_to_wall
+        return self.generate_twist()
 
-        self.turn = self.pid.update_control(self.distance_to_wall -
-                                            WALL_FOLLOW_DISTANCE)
+    def get_twist_follow_wall(self):
+
+        control_angle = self.pid.update_control(self.distance_to_wall -
+                                                WALL_FOLLOW_DISTANCE)
+
+        if self.angle_to_wall <= 0:
+            self.turn = -control_angle
+        else:
+            self.turn = control_angle
 
         self.speed = 0.2
 
@@ -142,17 +151,31 @@ class ReactiveBot(object):
         """
         if self.state == STATE_FIND_WALL:
             return self.movement_controller.get_twist_find_wall()
+        elif self.state == STATE_GO_TO_WALL:
+            return self.movement_controller.get_twist_go_to_wall()
         elif self.state == STATE_FOLLOW_WALL:
-            return self.movement_controller.get_twist_follow_wall(message)
+            return self.movement_controller.get_twist_follow_wall()
         else:
             print ("State is unkown. Has value '{}'.".format(self.state))
-            return Twist
+            return Twist()
 
     def is_wall_visible(self, ranges):
         return not all(math.isinf(r) for r in ranges)
 
     def update_state(self, message):
-        if self.is_wall_visible(message.ranges):
+        (current_angle_to_wall,
+            current_distance_to_wall) = calculate_closest_point(message)
+
+        self.movement_controller.angle_to_wall = current_angle_to_wall
+        self.movement_controller.distance_to_wall = current_distance_to_wall
+
+        if (self.is_wall_visible(message.ranges) and
+            self.movement_controller.distance_to_wall >
+                WALL_FOLLOW_DISTANCE + WALL_FOLLOW_DISTANCE_TOLERANCE):
+            self.state = STATE_GO_TO_WALL
+        elif (self.is_wall_visible(message.ranges) and
+              self.movement_controller.distance_to_wall <=
+              WALL_FOLLOW_DISTANCE + WALL_FOLLOW_DISTANCE_TOLERANCE):
             self.state = STATE_FOLLOW_WALL
         else:
             self.state = STATE_FIND_WALL

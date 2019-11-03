@@ -9,7 +9,7 @@ class PID:
     Intutive explanation: https://www.youtube.com/watch?v=wkfEZmsQqiA.
     """
 
-    def __init__(self, Kp, Td, Ti, dt):
+    def __init__(self, Kp, Ti, Td, dt):
         self.Kp = Kp
         self.Td = Td
         self.Ti = Ti
