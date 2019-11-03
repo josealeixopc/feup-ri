@@ -4,6 +4,7 @@
 import rospy
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Twist
+from pid import PID
 
 # from tf import transformations
 # from datetime import datetime
@@ -43,7 +44,7 @@ STATE_FIND_WALL = 0
 STATE_FOLLOW_WALL = 1
 
 # Wall-following settings
-WALL_FOLLOW_DISTANCE = 1  # in meter
+WALL_FOLLOW_DISTANCE = 0.5  # in meter
 WALL_FOLLOW_DISTANCE_TOLERANCE = 0.1
 WALL_FOLLOW_ANGLE_TOLERANCE = 0.05
 
@@ -88,99 +89,43 @@ def calculate_angle_of_ray_ext(min_angle, max_angle, resolution, angle_index):
 
 class MovementController(object):
     def __init__(self):
-        self.x = 0
-        self.th = 0
-        self.status = 0
-        self.count = 0
-        self.acc = 0.1
-        self.target_speed = 0
-        self.target_turn = 0
-        self.control_speed = 0
-        self.control_turn = 0
-
         self.speed = .5
         self.turn = 1
 
-        self.moveBindings = {
-            'f': (1, 0),  # front
-            'fr': (1, -1),  # front-right
-            'l': (0, 1),  # left
-            'r': (0, -1),  # right
-            'fl': (1, 1),  # front-left
-            'b': (-1, 0),  # back
-            'bl': (-1, 1),  # back-left
-            'br': (-1, -1),  # back-right
-        }
+        self.pid = PID(2.0, 3.0, 0.01, 0.2)
+        self.distance_to_wall = None
 
-    def print_vels(speed, turn):
-        print "currently:\tspeed %s\tturn %s " % (speed, turn)
+    def print_vels(self):
+        print "Currently:\tspeed %s\tturn %s " % (self.speed, self.turn)
 
     def generate_twist(self):
-        self.target_speed = self.speed * self.x
-        self.target_turn = self.turn * self.th
-
-        if self.target_speed > self.control_speed:
-            self.control_speed = min(self.target_speed,
-                                     self.control_speed + 0.02)
-        elif self.target_speed < self.control_speed:
-            self.control_speed = max(self.target_speed,
-                                     self.control_speed - 0.02)
-        else:
-            self.control_speed = self.target_speed
-
-        if self.target_turn > self.control_turn:
-            self.control_turn = min(self.target_turn, self.control_turn + 0.1)
-        elif self.target_turn < self.control_turn:
-            self.control_turn = max(self.target_turn, self.control_turn - 0.1)
-        else:
-            self.control_turn = self.target_turn
-
         twist = Twist()
-        twist.linear.x = self.control_speed
+        twist.linear.x = self.speed
         twist.linear.y = 0
         twist.linear.z = 0
         twist.angular.x = 0
         twist.angular.y = 0
-        twist.angular.z = self.control_turn
+        twist.angular.z = self.turn
 
         return twist
 
     def get_twist_find_wall(self):
-        self.th = 1
-        self.x = 1.5
+        self.turn = 0.5
+        self.speed = 1
 
         return self.generate_twist()
 
     def get_twist_follow_wall(self, message):
 
-        (angle_to_wall, distance_to_wall) = calculate_closest_point(message)
+        (current_angle_to_wall,
+            current_distance_to_wall) = calculate_closest_point(message)
 
-        if (distance_to_wall > WALL_FOLLOW_DISTANCE
-                + WALL_FOLLOW_DISTANCE_TOLERANCE):
-            # Go towards wall
-            if angle_to_wall == 0:
-                self.th = 0
-            elif angle_to_wall > 0:
-                self.th = -1
-            else:
-                self.th = 1
-        elif (distance_to_wall <
-              WALL_FOLLOW_DISTANCE - WALL_FOLLOW_DISTANCE_TOLERANCE):
-            if angle_to_wall > math.pi + WALL_FOLLOW_ANGLE_TOLERANCE:
-                self.th = -1
-            else:
-                self.th = 1
-        else:
-            # Circumvent wall with a clockwise trajectory
-            if (angle_to_wall <= math.pi + WALL_FOLLOW_ANGLE_TOLERANCE and
-                    angle_to_wall >= math.pi - WALL_FOLLOW_ANGLE_TOLERANCE):
-                self.th = 0
-            elif angle_to_wall > math.pi + WALL_FOLLOW_ANGLE_TOLERANCE:
-                self.th = -1
-            else:
-                self.th = 1
+        self.distance_to_wall = current_distance_to_wall
 
-        self.x = 1
+        self.turn = self.pid.update_control(self.distance_to_wall -
+                                            WALL_FOLLOW_DISTANCE)
+
+        self.speed = 0.2
 
         return self.generate_twist()
 
@@ -288,8 +233,10 @@ def main():
             bot.update_state(MESSAGE_CURRENT)
             controller_msg = bot.get_twist(MESSAGE_CURRENT)
 
-            # print controller_msg
-            # print "Robot state: {}".format(bot.state)
+            print controller_msg
+            print "Robot state: {}".format(bot.state)
+            print "Distance to wall: {}".format(
+                bot.movement_controller.distance_to_wall)
             controller_publisher.publish(controller_msg)
 
             rate.sleep()
