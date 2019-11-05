@@ -24,7 +24,15 @@ For this assignment, we built a Gazebo model which interacts with a ROS program 
 - ROS Melodic
 - `gazebo_ros` packages
 
+## Building
+
+Run the following command inside the `catkin_ws` respository:
+
+```catkin_make```
+
 ## Running
+
+All these commands should be ran inside the `catkin_ws` folder.
 
 ### Starting Gazebo
 
