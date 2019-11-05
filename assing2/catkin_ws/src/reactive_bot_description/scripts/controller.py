@@ -15,6 +15,7 @@ import math
 # import time
 import platform
 # import sys
+import matplotlib.pyplot as plt
 
 # The topic to which the sensor's plugin is publihing results
 # (from the gazebo.xacro file)
@@ -96,9 +97,17 @@ class MovementController(object):
         self.pid = PID(3.0, 0.01, 4.0, 0.2)
         self.distance_to_wall = None
         self.angle_to_wall = None
+        self.errors = []
 
     def print_vels(self):
         print "Currently:\tspeed %s\tturn %s " % (self.speed, self.turn)
+
+    def plot_errors(self):
+        plt.plot(self.errors, linewidth=1, color='#000000')
+        plt.xlabel('Time')
+        plt.ylabel('Distance Error')
+        plt.xticks([])
+        plt.show()
 
     def generate_twist(self):
         twist = Twist()
@@ -129,10 +138,12 @@ class MovementController(object):
         control_angle = self.pid.update_control(self.distance_to_wall -
                                                 WALL_FOLLOW_DISTANCE)
 
-        if self.angle_to_wall <= 0:
-            self.turn = -control_angle
-        else:
-            self.turn = control_angle
+        # if self.angle_to_wall <= 0:
+        #     self.turn = -control_angle
+        # else:
+        #     self.turn = control_angle
+
+        self.turn = control_angle
 
         self.speed = 0.2
 
@@ -168,6 +179,8 @@ class ReactiveBot(object):
 
         self.movement_controller.angle_to_wall = current_angle_to_wall
         self.movement_controller.distance_to_wall = current_distance_to_wall
+        self.movement_controller.errors.append(WALL_FOLLOW_DISTANCE -
+                                               current_distance_to_wall)
 
         if (self.is_wall_visible(message.ranges) and
             self.movement_controller.distance_to_wall >
@@ -179,6 +192,9 @@ class ReactiveBot(object):
             self.state = STATE_FOLLOW_WALL
         else:
             self.state = STATE_FIND_WALL
+
+    def plot_errors(self):
+        self.movement_controller.plot_errors()
 
 
 def set_sensor_settings(message):
@@ -269,6 +285,7 @@ def main():
         # If any exception is thrown, remember to tell the robot to stop
         # Twist() returns all 0's for linear and angular velocity
         controller_publisher.publish(Twist())
+        bot.plot_errors()
 
 
 if __name__ == '__main__':
