@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+
+    <param name="robot_description" command="$(find xacro)/xacro.py $(find reactive_bot_description)/urdf/reactive_bot.xacro" />
+
+    <!-- Required argument which is the name of the model's entity  in Gazebo. This value CANNOT be the same as an entity that exists in Gazebo. -->
+    <arg name="model" default="reactive_bot_0"/>
+    <arg name="x" default="0"/>
+    <arg name="y" default="0"/>
+    <arg name="z" default="0.5"/>
+
+    <node name="reactive_bot_spawn_urdf" pkg="gazebo_ros" type="spawn_model" output="screen"
+          args="-param robot_description -urdf -model $(arg model) -x $(arg x) -y $(arg y) -z $(arg z)" />
+
+</launch>
