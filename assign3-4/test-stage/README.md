@@ -5,6 +5,8 @@
 - https://docs.google.com/document/d/1Z9a7_pUjAzffjLQwJS3TbPZKW0F-7FDCU_35fqv-Ycs/edit#heading=h.5cn7d0u38h0k
 - REALLY HANDY: https://player-stage-manual.readthedocs.io/en/stable/
 - Stage manual: http://rtv.github.io/Stage/group__model.html
+- Learn TurtleBot: http://learn.turtlebot.com/
+- TurtleBot 3 tutorials: http://emanual.robotis.com/docs/en/platform/turtlebot3/slam/
 
 ## Installing Stage
 

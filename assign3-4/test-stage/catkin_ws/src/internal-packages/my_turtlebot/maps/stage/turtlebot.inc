@@ -2,13 +2,12 @@ define kinect ranger
 (
   sensor
   (
-    range [0 6.5]
+    range_max 6.5
     fov 58.0
     samples 640
-    size [ 0.06 0.15 0.03 ]    
   )
   # generic model properties
-  color "green"
+  color "black"
   size [ 0.06 0.15 0.03 ]
 )
 
@@ -39,8 +38,6 @@ define turtlebot position
   color "gray"
   
   kinect(pose [ -0.1 0.0 -0.11 0.0 ])
-
   # NO CAMERA for now...
   # my_camera (pose [ -0.1 0.0 -0.11 0.0 ])
 )
-

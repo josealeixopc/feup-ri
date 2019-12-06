@@ -20,6 +20,8 @@
   <arg name="initial_pose_y" default="2.0"/>
   <arg name="initial_pose_a" default="0.0"/>
 
+  <arg name="fully_observable_map" default="false"/>
+
   <!-- Explanation here: http://wiki.ros.org/Clock#Using_Simulation_Time_from_the_.2BAC8-clock_Topic -->
   <param name="/use_sim_time" value="true"/>
   <!--  ******************** Stage ********************  -->
@@ -54,23 +56,46 @@
   </node>
 
   <!--  ****** Maps *****  -->
-  <!-- Publish map information using map_server. -->
-  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)">
-    <param name="frame_id" value="map"/>
-  </node>
+  <!-- The map information on the "/map" topic depends on the "fully_observable_map" argument. If it is
+  set to true, then the robot has information about all the map. Else, it has only the information provided by the sensors. -->
 
-  <!-- AMCL publishes a transform that allows to known the position of the robot in the map.
-  Source: https://answers.ros.org/question/12750/problem-in-transform-from-map-to-base/
-   -->
-  <include file="$(find turtlebot_navigation)/launch/includes/amcl/amcl.launch.xml">
-    <arg name="scan_topic" value="scan"/>
-    <arg name="use_map_topic" value="true"/>
-    <arg name="initial_pose_x" value="$(arg initial_pose_x)"/>
-    <arg name="initial_pose_y" value="$(arg initial_pose_y)"/>
-    <arg name="initial_pose_a" value="$(arg initial_pose_a)"/>
-  </include>
-    
+  <!-- If and Unless: http://wiki.ros.org/roslaunch/XML#if_and_unless_attributes -->
+  
+  <group if="$(arg fully_observable_map)">
+    <!-- Map Server publishes map information from a file AND NOT FROM THE ROBOT. -->
+    <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)">
+      <param name="frame_id" value="map"/>
+    </node>
+
+    <!-- AMCL publishes a transform that allows to known the position of the robot in the map.
+    Source: https://answers.ros.org/question/12750/problem-in-transform-from-map-to-base/
+    -->
+    <include file="$(find turtlebot_navigation)/launch/includes/amcl/amcl.launch.xml">
+      <arg name="scan_topic" value="scan"/>
+      <arg name="use_map_topic" value="true"/>
+      <arg name="initial_pose_x" value="$(arg initial_pose_x)"/>
+      <arg name="initial_pose_y" value="$(arg initial_pose_y)"/>
+      <arg name="initial_pose_a" value="$(arg initial_pose_a)"/>
+    </include>
+      
+  </group>
+  
+  <group unless="$(arg fully_observable_map)">
+    <!-- GMapping makes the ROBOT ITSELF build the map. -->
+    <include file="$(find turtlebot_gazebo)/launch/gmapping_demo.launch"/>
+
+    <include file="$(find turtlebot_navigation)/launch/includes/amcl/amcl.launch.xml">
+      <arg name="scan_topic" value="scan"/>
+      <arg name="use_map_topic" value="true"/>
+      <arg name="initial_pose_x" value="$(arg initial_pose_x)"/>
+      <arg name="initial_pose_y" value="$(arg initial_pose_y)"/>
+      <arg name="initial_pose_a" value="$(arg initial_pose_a)"/>
+    </include>
+  </group>
 
   <!-- RVIZ -->
+  
   <!-- <node type="rviz" name="rviz" pkg="rviz" args="-d $(find my_turtlebot)/rviz/my_config_1.rviz" /> -->
+  
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find turtlebot_rviz_launchers)/rviz/navigation.rviz"/>
 </launch>
