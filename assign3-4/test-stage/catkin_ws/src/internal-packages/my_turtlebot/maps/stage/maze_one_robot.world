@@ -1,4 +1,5 @@
 include "turtlebot.inc"
+include "trash.inc"
 
 # time to pause (in GUI mode) or quit (in headless mode (-g)) the simulation
 quit_time 3600 # 1 hour of simulated time
@@ -63,3 +64,7 @@ turtlebot
   name "turtlebot"
   color "black"
 )
+
+# and a bit of trash
+
+trash (pose [6.0 6.0 0.0 0.0])

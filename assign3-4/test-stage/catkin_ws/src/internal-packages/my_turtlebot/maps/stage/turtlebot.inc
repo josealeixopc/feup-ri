@@ -8,7 +8,7 @@ define kinect ranger
     size [ 0.06 0.15 0.03 ]    
   )
   # generic model properties
-  color "black"
+  color "green"
   size [ 0.06 0.15 0.03 ]
 )
 
@@ -22,7 +22,7 @@ define my_camera camera
 
   # model properties
   size [ 0.1 0.07 0.05 ]
-  color "black"
+  color "blue"
   watts 100.0 # TODO find watts for sony pan-tilt camera
 )
 
@@ -39,6 +39,8 @@ define turtlebot position
   color "gray"
   
   kinect(pose [ -0.1 0.0 -0.11 0.0 ])
-  my_camera (pose [ -0.1 0.0 -0.11 0.0 ])
+
+  # NO CAMERA for now...
+  # my_camera (pose [ -0.1 0.0 -0.11 0.0 ])
 )
 
