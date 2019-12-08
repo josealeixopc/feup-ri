@@ -52,13 +52,15 @@
 
     <!-- Launch GMapping for each robot. -->
     
-    <include file="$(find turtlebot3_slam)/launch/turtlebot3_gmapping.launch" ns="$(arg first_tb3)">
+    <include file="$(find coop_mapping)/launch/my_turtlebot3_gmapping.launch" ns="$(arg first_tb3)">
+        <arg name="model" value="$(arg model)"/>
         <arg name="set_base_frame" value="$(arg first_tb3)/base_footprint"/>
         <arg name="set_odom_frame" value="$(arg first_tb3)/odom"/>
         <arg name="set_map_frame" value="$(arg first_tb3)/map"/>
     </include> 
 
-    <include file="$(find turtlebot3_slam)/launch/turtlebot3_gmapping.launch" ns="$(arg second_tb3)">
+    <include file="$(find coop_mapping)/launch/my_turtlebot3_gmapping.launch" ns="$(arg second_tb3)">
+        <arg name="model" value="$(arg model)"/>
         <arg name="set_base_frame" value="$(arg second_tb3)/base_footprint"/>
         <arg name="set_odom_frame" value="$(arg second_tb3)/odom"/>
         <arg name="set_map_frame" value="$(arg second_tb3)/map"/>
