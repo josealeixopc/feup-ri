@@ -180,8 +180,8 @@ def RegisterOpenAI_Ros_Env(task_env, timestep_limit_per_episode=10000):
 
         register(
             id=task_env,
-            entry_point='openai_ros:task_envs.turtlebot3.turtlebot3_world.TurtleBot3WorldEnv',
-            timestep_limit=timestep_limit_per_episode,
+            entry_point='openai_ros.task_envs.turtlebot3.turtlebot3_world:TurtleBot3WorldEnv',
+            max_episode_steps=timestep_limit_per_episode,
         )
 
         # import our training environment

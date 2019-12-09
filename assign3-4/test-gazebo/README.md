@@ -3,6 +3,8 @@
 ## TODO
 
 - Create simple RL environment for ONE robot
+    - Try to use the OPEN AI ROS environments
+        - Don't forget the `max_episode_steps` problem and the `.` and `:` problem in `task_envs_list.py`.
 - Scale single RL environment to two robots
 
 ## Warnings
