@@ -46,7 +46,7 @@ class TurtleBot3Env(robot_gazebo_env.RobotGazeboEnv):
 
         # We launch the ROSlaunch that spawns the robot into the world
         ROSLauncher(rospackage_name="turtlebot3_gazebo",
-                    launch_file_name="put_turtlebot3_in_world.launch",
+                    launch_file_name="put_robot_in_world.launch",
                     ros_ws_abspath=ros_ws_abspath)
 
         # Internal Vars
