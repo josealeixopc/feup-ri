@@ -1,0 +1,8 @@
+prefix=/home/jazz/Projects/FEUP/ProDEI/feup-ri/assign3-4/catkin_ws/install
+
+Name: my_moving_cube_pkg
+Description: Description of my_moving_cube_pkg
+Version: 0.0.0
+Cflags: 
+Libs: -L/home/jazz/Projects/FEUP/ProDEI/feup-ri/assign3-4/catkin_ws/install/lib 
+Requires: 

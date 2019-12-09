@@ -1,9 +1,0 @@
-<<<<<<< HEAD
-*.pyc
-=======
-bin
-build
-lib
-msg_gen
-_*.py
->>>>>>> repo1

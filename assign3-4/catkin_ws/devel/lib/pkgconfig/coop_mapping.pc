@@ -1,0 +1,8 @@
+prefix=/home/jazz/Projects/FEUP/ProDEI/feup-ri/assign3-4/catkin_ws/devel
+
+Name: coop_mapping
+Description: Description of coop_mapping
+Version: 0.0.0
+Cflags: 
+Libs: -L/home/jazz/Projects/FEUP/ProDEI/feup-ri/assign3-4/catkin_ws/devel/lib 
+Requires: 
