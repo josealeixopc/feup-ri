@@ -27,7 +27,19 @@
 
 ### Starting Gazebo and Robots
 
-The following command does several things:
+#### Starting 1 Robot mapping
+
+```
+roslaunch coop_mapping 1_robot.launch 
+```
+
+1. Starts ROSCore if it's not running already
+1. Starts the Gazebo World with Gazebo ROS
+1. Spawns **one** TurtleBot 3 robots
+1. Launches GMapping for the robot
+1. Launches RViz
+
+#### Starting 2 Robot mapping
 
 ```
 roslaunch coop_mapping 2_robots.launch 
