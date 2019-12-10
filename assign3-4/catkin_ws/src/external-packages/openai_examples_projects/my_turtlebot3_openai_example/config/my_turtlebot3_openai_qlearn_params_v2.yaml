@@ -1,6 +1,6 @@
 turtlebot3: #namespace
     task_and_robot_environment_name: 'TurtleBot3World-v0'
-    ros_ws_abspath: "/home/jazz/Projects/FEUP/ProDEI/feup-ri/assign3-4/test-gazebo-ros-openai/catkin_ws"
+    ros_ws_abspath: "/home/jazz/Projects/FEUP/ProDEI/feup-ri/assign3-4/catkin_ws"
     running_step: 0.04 # amount of time the control will be executed
     pos_step: 0.016     # increment in position for each command
     
