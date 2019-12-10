@@ -7,9 +7,10 @@
         - Don't forget the `max_episode_steps` problem and the `.` and `:` problem in `task_envs_list.py`.
 - Scale single RL environment to two robots
 
-## Tips for Development
+## Tips and Warnings for Development
 
 - Some problems can be solved by reading/downloading the code of the `openai_ros`, `open_ai_gym_construct` and `openai_examples_projects` from the [Construct BitBucket](https://bitbucket.org/theconstructcore/).
+    - The `turtlebot3` package in this repo is the original one from ROBOTIS. However, the one OpenAI_ROS works with is the one they have in their own BitButcket: [turtlebot3](https://bitbucket.org/theconstructcore/turtlebot3/src/master/).
 - Generate the `requirements.txt` command by running `pip freeze -l > requirements.txt`.
     - The `-l` flag makes sure that only packages inside the virtualenv are put in the file. As `PYTHONPATH` is set by ROS and adds many packages to the `pip list`, you'll need to use the flag to cut out the ROS packages.
 
