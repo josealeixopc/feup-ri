@@ -18,6 +18,12 @@
 - [turtlebot3_simulations](https://github.com/ROBOTIS-GIT/turtlebot3_simulations)
 - [turtlebot3_msgs](https://github.com/ROBOTIS-GIT/turtlebot3_msgs)
 
+**Map generation from Gazebo world file**
+
+- [pgm_map_creator](https://github.com/hyfan1116/pgm_map_creator)
+ - There is an issue with `File already exists in database: vector2d.proto` message, that can be solved by following this [here](https://bitbucket.org/osrf/gazebo_tutorials/pull-requests/443/this-is-to-fix-the-protobuf-problem-when/diff).
+
+
 ## Other useful packages
 
 - [openai_ros turtlebot3](https://bitbucket.org/theconstructcore/turtlebot3)
