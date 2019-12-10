@@ -1,8 +1,0 @@
-prefix=/home/jazz/Projects/FEUP/ProDEI/feup-ri/assign3-4/catkin_ws/devel
-
-Name: turtlebot3_slam
-Description: Description of turtlebot3_slam
-Version: 1.2.1
-Cflags: -I/home/jazz/Projects/FEUP/ProDEI/feup-ri/assign3-4/catkin_ws/src/external-packages/turtlebot3-master/turtlebot3_slam/include
-Libs: -L/home/jazz/Projects/FEUP/ProDEI/feup-ri/assign3-4/catkin_ws/devel/lib 
-Requires: roscpp sensor_msgs
