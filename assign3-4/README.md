@@ -25,6 +25,23 @@
 
 - The first time the `turtlebot3_house.world` is used in Gazebo, it takes quite a long time to start, because it is downloading the map.
 
+## Generating maps from world files
+
+This is done using the `pgm_map_creator` inside `external packages`.
+
+### Add the map and insert the plugin
+1. Add your world file to world folder
+2. Add this line at the end of the world file, before `</world>` tag:
+`<plugin filename="libcollision_map_creator.so" name="collision_map_creator"/>`
+
+### Create the pgm map file
+1. Open a terminal, run gzerver with the map file
+`rosrun gazebo_ros gazebo <catkin_ws_path>/src/pgm_map_creator/world/<map file>`
+2. Open another terminal, launch the request_publisher node
+`roslaunch pgm_map_creator request_publisher.launch`
+3. Wait for the plugin to generate map. It will be located in the map folder
+
+
 ### Starting Gazebo and Robots
 
 #### Starting 1 Robot mapping
