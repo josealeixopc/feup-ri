@@ -5,6 +5,11 @@
 - Create simple RL environment for ONE robot
     - Try to use the OPEN AI ROS environments
         - Don't forget the `max_episode_steps` problem and the `.` and `:` problem in `task_envs_list.py`.
+    - Try to disable Gazebo's ODE (physics engine) to accelerate learning.
+        - Maybe [this](https://answers.ros.org/question/218744/gazebo-disable-physics-or-enable-kinematics-through-codecommand-line/)?
+        - Or [this](http://gazebosim.org/tutorials?tut=preset_manager&cat=physics).
+        - Or [this](http://answers.gazebosim.org/question/14384/changing-physics-engine-through-urdf/).
+        - Or [this](https://answers.ros.org/question/218744/gazebo-disable-physics-or-enable-kinematics-through-codecommand-line/).
 - Scale single RL environment to two robots
 
 ## Tips and Warnings for Development
