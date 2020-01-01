@@ -13,11 +13,11 @@ from openai_ros.openai_ros_common import StartOpenAI_ROS_Environment
 
 if __name__ == '__main__':
 
-    rospy.init_node('start_training_1_robot', anonymous=True, log_level=rospy.WARN)
+    rospy.init_node('turtlebot3_world_qlearn', anonymous=True, log_level=rospy.WARN)
 
     # Init OpenAI_ROS ENV
     task_and_robot_environment_name = rospy.get_param(
-        '/turtlebot2/task_and_robot_environment_name')
+        '/turtlebot3/task_and_robot_environment_name')
     env = StartOpenAI_ROS_Environment(
         task_and_robot_environment_name)
     # Create the Gym environment
@@ -26,7 +26,7 @@ if __name__ == '__main__':
 
     # Set the logging system
     rospack = rospkg.RosPack()
-    pkg_path = rospack.get_path('coop_mapping')
+    pkg_path = rospack.get_path('my_turtlebot3_openai_example')
     outdir = pkg_path + '/training_results'
     env = wrappers.Monitor(env, outdir, force=True)
     rospy.loginfo("Monitor Wrapper started")
@@ -36,14 +36,14 @@ if __name__ == '__main__':
     # Loads parameters from the ROS param server
     # Parameters are stored in a yaml file inside the config directory
     # They are loaded at runtime by the launch file
-    Alpha = rospy.get_param("/turtlebot2/alpha")
-    Epsilon = rospy.get_param("/turtlebot2/epsilon")
-    Gamma = rospy.get_param("/turtlebot2/gamma")
-    epsilon_discount = rospy.get_param("/turtlebot2/epsilon_discount")
-    nepisodes = rospy.get_param("/turtlebot2/nepisodes")
-    nsteps = rospy.get_param("/turtlebot2/nsteps")
+    Alpha = rospy.get_param("/turtlebot3/alpha")
+    Epsilon = rospy.get_param("/turtlebot3/epsilon")
+    Gamma = rospy.get_param("/turtlebot3/gamma")
+    epsilon_discount = rospy.get_param("/turtlebot3/epsilon_discount")
+    nepisodes = rospy.get_param("/turtlebot3/nepisodes")
+    nsteps = rospy.get_param("/turtlebot3/nsteps")
 
-    running_step = rospy.get_param("/turtlebot2/running_step")
+    running_step = rospy.get_param("/turtlebot3/running_step")
 
     # Initialises the algorithm that we are going to use for learning
     qlearn = qlearn.QLearn(actions=range(env.action_space.n),
@@ -73,11 +73,11 @@ if __name__ == '__main__':
             rospy.logwarn("############### Start Step=>" + str(i))
             # Pick an action based on the current state
             action = qlearn.chooseAction(state)
-            rospy.logwarn("Next action is:%d", action)
+            rospy.logdebug("Next action is:%d", action)
             # Execute the action in the environment and get feedback
             observation, reward, done, info = env.step(action)
 
-            rospy.logwarn(str(observation) + " " + str(reward))
+            rospy.logdebug(str(observation) + " " + str(reward))
             cumulated_reward += reward
             if highest_reward < cumulated_reward:
                 highest_reward = cumulated_reward
@@ -85,18 +85,18 @@ if __name__ == '__main__':
             nextState = ''.join(map(str, observation))
 
             # Make the algorithm learn based on the results
-            rospy.logwarn("# state we were=>" + str(state))
-            rospy.logwarn("# action that we took=>" + str(action))
-            rospy.logwarn("# reward that action gave=>" + str(reward))
-            rospy.logwarn("# episode cumulated_reward=>" + str(cumulated_reward))
-            rospy.logwarn("# State in which we will start next step=>" + str(nextState))
+            rospy.logdebug("# state we were=>" + str(state))
+            rospy.logdebug("# action that we took=>" + str(action))
+            rospy.logdebug("# reward that action gave=>" + str(reward))
+            rospy.logdebug("# episode cumulated_reward=>" + str(cumulated_reward))
+            rospy.logdebug("# State in which we will start next step=>" + str(nextState))
             qlearn.learn(state, action, reward, nextState)
 
             if not (done):
-                rospy.logwarn("NOT DONE")
+                rospy.logdebug("NOT DONE")
                 state = nextState
             else:
-                rospy.logwarn("DONE")
+                rospy.logdebug("DONE")
                 last_time_steps = numpy.append(last_time_steps, [int(i + 1)])
                 break
             rospy.logwarn("############### END Step=>" + str(i))

@@ -9,7 +9,7 @@ from openai_ros.openai_ros_common import ROSLauncher
 import os
 
 
-class TurtleBot3WorldEnv(turtlebot3_env.TurtleBot3Env):
+class TurtleBot3WorldMappingEnv(turtlebot3_env.TurtleBot3Env):
     def __init__(self):
         """
         This Task Env is designed for having the TurtleBot3 in the turtlebot3 world
@@ -24,17 +24,17 @@ class TurtleBot3WorldEnv(turtlebot3_env.TurtleBot3Env):
                                                "/src;cd " + ros_ws_abspath + ";catkin_make"
 
         ROSLauncher(rospackage_name="turtlebot3_gazebo",
-                    launch_file_name="start_world.launch",
+                    launch_file_name="start_empty_world.launch",
                     ros_ws_abspath=ros_ws_abspath)
 
         # Load Params from the desired Yaml file
         LoadYamlFileParamsTest(rospackage_name="openai_ros",
-                               rel_path_from_package_to_file="src/openai_ros/task_envs/turtlebot3/config",
-                               yaml_file_name="turtlebot3_world.yaml")
+                               rel_path_from_package_to_file="src/openai_ros/task_envs/turtlebot3_my_envs/config",
+                               yaml_file_name="turtlebot3_world_mapping.yaml")
 
 
         # Here we will add any init functions prior to starting the MyRobotEnv
-        super(TurtleBot3WorldEnv, self).__init__(ros_ws_abspath)
+        super(TurtleBot3WorldMappingEnv, self).__init__(ros_ws_abspath)
 
         # Only variable needed to be set here
         number_actions = rospy.get_param('/turtlebot3/n_actions')
