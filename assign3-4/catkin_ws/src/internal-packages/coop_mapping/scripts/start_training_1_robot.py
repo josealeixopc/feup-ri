@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 import gym
 import numpy
 import time
@@ -10,10 +11,24 @@ import rospy
 import rospkg
 from openai_ros.openai_ros_common import StartOpenAI_ROS_Environment
 
+VS_ROS_DEBUG = 1
 
 if __name__ == '__main__':
 
-    rospy.init_node('turtlebot3_world_qlearn', anonymous=True, log_level=rospy.WARN)
+    if VS_ROS_DEBUG:
+        raw_input('Waiting for VS ROS debugger to be attached... Press a key once it has been attached.')
+
+    ### Export ENV variables BEGIN
+    
+    # Add node name to ROS logging messages 
+    os.environ['ROSCONSOLE_FORMAT']='[${severity}] [${time}]: ${node}: ${message}'
+    
+    # Set TB3 model
+    os.environ['TURTLEBOT3_MODEL'] = 'burger'
+    
+    ### Export ENV variables END
+
+    rospy.init_node('turtlebot3_world_mapping_qlearn', anonymous=True, log_level=rospy.DEBUG)
 
     # Init OpenAI_ROS ENV
     task_and_robot_environment_name = rospy.get_param(
@@ -26,7 +41,7 @@ if __name__ == '__main__':
 
     # Set the logging system
     rospack = rospkg.RosPack()
-    pkg_path = rospack.get_path('my_turtlebot3_openai_example')
+    pkg_path = rospack.get_path('coop_mapping')
     outdir = pkg_path + '/training_results'
     env = wrappers.Monitor(env, outdir, force=True)
     rospy.loginfo("Monitor Wrapper started")
@@ -55,7 +70,7 @@ if __name__ == '__main__':
 
     # Starts the main training loop: the one about the episodes to do
     for x in range(nepisodes):
-        rospy.logdebug("############### START EPISODE=>" + str(x))
+        rospy.loginfo("############### START EPISODE=>" + str(x))
 
         cumulated_reward = 0
         done = False
@@ -71,13 +86,14 @@ if __name__ == '__main__':
         # for each episode, we test the robot for nsteps
         for i in range(nsteps):
             rospy.logwarn("############### Start Step=>" + str(i))
+            rospy.loginfo("Choosing next action...")
             # Pick an action based on the current state
             action = qlearn.chooseAction(state)
-            rospy.logdebug("Next action is:%d", action)
+            rospy.loginfo("Next action is:%d", action)
             # Execute the action in the environment and get feedback
             observation, reward, done, info = env.step(action)
 
-            rospy.logdebug(str(observation) + " " + str(reward))
+            rospy.loginfo(str(observation) + " " + str(reward))
             cumulated_reward += reward
             if highest_reward < cumulated_reward:
                 highest_reward = cumulated_reward
@@ -85,18 +101,18 @@ if __name__ == '__main__':
             nextState = ''.join(map(str, observation))
 
             # Make the algorithm learn based on the results
-            rospy.logdebug("# state we were=>" + str(state))
-            rospy.logdebug("# action that we took=>" + str(action))
-            rospy.logdebug("# reward that action gave=>" + str(reward))
-            rospy.logdebug("# episode cumulated_reward=>" + str(cumulated_reward))
-            rospy.logdebug("# State in which we will start next step=>" + str(nextState))
+            rospy.loginfo("# state we were=>" + str(state))
+            rospy.loginfo("# action that we took=>" + str(action))
+            rospy.loginfo("# reward that action gave=>" + str(reward))
+            rospy.loginfo("# episode cumulated_reward=>" + str(cumulated_reward))
+            rospy.loginfo("# State in which we will start next step=>" + str(nextState))
             qlearn.learn(state, action, reward, nextState)
 
             if not (done):
-                rospy.logdebug("NOT DONE")
+                rospy.loginfo("NOT DONE")
                 state = nextState
             else:
-                rospy.logdebug("DONE")
+                rospy.loginfo("DONE")
                 last_time_steps = numpy.append(last_time_steps, [int(i + 1)])
                 break
             rospy.logwarn("############### END Step=>" + str(i))
