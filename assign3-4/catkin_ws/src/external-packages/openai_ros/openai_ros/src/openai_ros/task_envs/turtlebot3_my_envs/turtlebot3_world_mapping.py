@@ -1,7 +1,7 @@
 import rospy
 import numpy
 from gym import spaces
-from openai_ros.robot_envs import turtlebot3_env
+import turtlebot3_env
 from gym.envs.registration import register
 from geometry_msgs.msg import Vector3
 from openai_ros.task_envs.task_commons import LoadYamlFileParamsTest
@@ -26,8 +26,14 @@ class TurtleBot3WorldMappingEnv(turtlebot3_env.TurtleBot3Env):
                                                " DOESNT exist, execute: mkdir -p " + ros_ws_abspath + \
                                                "/src;cd " + ros_ws_abspath + ";catkin_make"
 
-        ROSLauncher(rospackage_name="turtlebot3_gazebo",
-                    launch_file_name="start_empty_world.launch",
+        # Depending on which environment we're in, decide to launch Gazebo with or without GUI
+        gazebo_launch_file = "start_empty_tb3_world.launch"
+
+        if os.environ.get('GAZEBO_GUI') == 'false':
+            gazebo_launch_file = "start_empty_tb3_world_no_gui.launch"
+
+        ROSLauncher(rospackage_name="coop_mapping",
+                    launch_file_name=gazebo_launch_file,
                     ros_ws_abspath=ros_ws_abspath)
 
         # Load Params from the desired Yaml file
@@ -37,7 +43,9 @@ class TurtleBot3WorldMappingEnv(turtlebot3_env.TurtleBot3Env):
 
 
         # Here we will add any init functions prior to starting the MyRobotEnv
-        super(TurtleBot3WorldMappingEnv, self).__init__(ros_ws_abspath)
+        super(TurtleBot3WorldMappingEnv, self).__init__(ros_ws_abspath, 
+                                                        ros_launch_file_package="turtlebot3_gazebo", 
+                                                        ros_launch_file_name="put_robot_in_world.launch")
 
         # Only variable needed to be set here
         number_actions = rospy.get_param('/turtlebot3/n_actions')
