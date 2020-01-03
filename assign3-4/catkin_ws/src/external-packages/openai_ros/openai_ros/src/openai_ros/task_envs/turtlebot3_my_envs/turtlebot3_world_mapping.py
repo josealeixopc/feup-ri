@@ -8,6 +8,9 @@ from openai_ros.task_envs.task_commons import LoadYamlFileParamsTest
 from openai_ros.openai_ros_common import ROSLauncher
 import os
 
+from geometry_msgs.msg import Twist
+
+from utils.pseudo_collision_detector import PseudoCollisionDetector
 
 class TurtleBot3WorldMappingEnv(turtlebot3_env.TurtleBot3Env):
     def __init__(self):
@@ -81,8 +84,8 @@ class TurtleBot3WorldMappingEnv(turtlebot3_env.TurtleBot3Env):
         # We only use two integers
         self.observation_space = spaces.Box(low, high)
         
-        rospy.logdebug("ACTION SPACES TYPE===>"+str(self.action_space))
-        rospy.logdebug("OBSERVATION SPACES TYPE===>"+str(self.observation_space))
+        rospy.loginfo("ACTION SPACES TYPE===>"+str(self.action_space))
+        rospy.loginfo("OBSERVATION SPACES TYPE===>"+str(self.observation_space))
         
         # Rewards
         self.forwards_reward = rospy.get_param("/turtlebot3/forwards_reward")
@@ -122,7 +125,7 @@ class TurtleBot3WorldMappingEnv(turtlebot3_env.TurtleBot3Env):
         :param action: The action integer that set s what movement to do next.
         """
         
-        rospy.logdebug("Start Set Action ==>"+str(action))
+        rospy.loginfo("Start Set Action ==>"+str(action))
         # We convert the actions to speed movements to send to the parent class CubeSingleDiskEnv
         if action == 0: #FORWARD
             linear_speed = self.linear_forward_speed
@@ -140,7 +143,7 @@ class TurtleBot3WorldMappingEnv(turtlebot3_env.TurtleBot3Env):
         # We tell TurtleBot2 the linear and angular speed to set to execute
         self.move_base(linear_speed, angular_speed, epsilon=0.05, update_rate=10)
         
-        rospy.logdebug("END Set Action ==>"+str(action))
+        rospy.loginfo("END Set Action ==>"+str(action))
 
     def _get_obs(self):
         """
@@ -149,7 +152,7 @@ class TurtleBot3WorldMappingEnv(turtlebot3_env.TurtleBot3Env):
         TurtleBot2Env API DOCS
         :return:
         """
-        rospy.logdebug("Start Get Observation ==>")
+        rospy.loginfo("Start Get Observation ==>")
         # We get the laser scan data
         laser_scan = self.get_laser_scan()
         
@@ -157,17 +160,17 @@ class TurtleBot3WorldMappingEnv(turtlebot3_env.TurtleBot3Env):
                                                                         self.new_ranges
                                                                         )
 
-        rospy.logdebug("Observations==>"+str(discretized_observations))
-        rospy.logdebug("END Get Observation ==>")
+        rospy.loginfo("Observations==>"+str(discretized_observations))
+        rospy.loginfo("END Get Observation ==>")
         return discretized_observations
         
 
     def _is_done(self, observations):
         
         if self._episode_done:
-            rospy.logerr("TurtleBot2 is Too Close to wall==>")
+            rospy.logerr("TurtleBot3 is Too Close to wall==>")
         else:
-            rospy.logwarn("TurtleBot2 is NOT close to a wall ==>")
+            rospy.logwarn("TurtleBot3 is NOT close to a wall ==>")
             
         # Now we check if it has crashed based on the imu
         imu_data = self.get_imu()
@@ -192,11 +195,11 @@ class TurtleBot3WorldMappingEnv(turtlebot3_env.TurtleBot3Env):
             reward = -1*self.end_episode_points
 
 
-        rospy.logdebug("reward=" + str(reward))
+        rospy.loginfo("reward=" + str(reward))
         self.cumulated_reward += reward
-        rospy.logdebug("Cumulated_reward=" + str(self.cumulated_reward))
+        rospy.loginfo("Cumulated_reward=" + str(self.cumulated_reward))
         self.cumulated_steps += 1
-        rospy.logdebug("Cumulated_steps=" + str(self.cumulated_steps))
+        rospy.loginfo("Cumulated_steps=" + str(self.cumulated_steps))
         
         return reward
 
@@ -213,9 +216,9 @@ class TurtleBot3WorldMappingEnv(turtlebot3_env.TurtleBot3Env):
         discretized_ranges = []
         mod = len(data.ranges)/new_ranges
         
-        rospy.logdebug("data=" + str(data))
-        rospy.logdebug("new_ranges=" + str(new_ranges))
-        rospy.logdebug("mod=" + str(mod))
+        rospy.loginfo("data=" + str(data))
+        rospy.loginfo("new_ranges=" + str(new_ranges))
+        rospy.loginfo("mod=" + str(mod))
         
         for i, item in enumerate(data.ranges):
             if (i%mod==0):
@@ -230,7 +233,7 @@ class TurtleBot3WorldMappingEnv(turtlebot3_env.TurtleBot3Env):
                     rospy.logerr("done Validation >>> item=" + str(item)+"< "+str(self.min_range))
                     self._episode_done = True
                 else:
-                    rospy.logdebug("NOT done Validation >>> item=" + str(item)+"< "+str(self.min_range))
+                    rospy.loginfo("NOT done Validation >>> item=" + str(item)+"< "+str(self.min_range))
                     
 
         return discretized_ranges
@@ -248,3 +251,92 @@ class TurtleBot3WorldMappingEnv(turtlebot3_env.TurtleBot3Env):
 
         return force_magnitude
 
+    def check_if_crashed(self):
+        laser_scan_message = self.get_laser_scan()
+
+        collision_detector = PseudoCollisionDetector()
+
+        return collision_detector.collision_detected(laser_scan_message, self.min_range)
+
+    ##### Turtlebot3Env functions override BEGIN
+
+    # Methods that the TrainingEnvironment will need.
+    # ----------------------------
+    def move_base(self, linear_speed, angular_speed, epsilon=0.05, update_rate=10):
+        """
+        It will move the base based on the linear and angular speeds given.
+        It will wait untill those twists are achived reading from the odometry topic.
+        :param linear_speed: Speed in the X axis of the robot base frame
+        :param angular_speed: Speed of the angular turning of the robot base frame
+        :param epsilon: Acceptable difference between the speed asked and the odometry readings
+        :param update_rate: Rate at which we check the odometry.
+        :return: 
+        """
+        cmd_vel_value = Twist()
+        cmd_vel_value.linear.x = linear_speed
+        cmd_vel_value.angular.z = angular_speed
+        rospy.loginfo("TurtleBot3 Base Twist Cmd>>" + str(cmd_vel_value))
+        self._check_publishers_connection()
+        self._cmd_vel_pub.publish(cmd_vel_value)
+        self.wait_until_twist_achieved(cmd_vel_value,
+                                        epsilon,
+                                        update_rate)
+    
+    def wait_until_twist_achieved(self, cmd_vel_value, epsilon, update_rate):
+        """
+        We wait for the cmd_vel twist given to be reached by the robot reading
+        from the odometry.
+        :param cmd_vel_value: Twist we want to wait to reach.
+        :param epsilon: Error acceptable in odometry readings.
+        :param update_rate: Rate at which we check the odometry.
+        :return:
+        """
+        rospy.loginfo("START wait_until_twist_achieved...")
+        
+        rate = rospy.Rate(update_rate)
+        start_wait_time = rospy.get_rostime().to_sec()
+        end_wait_time = 0.0
+        
+        rospy.loginfo("Desired Twist Cmd>>" + str(cmd_vel_value))
+        rospy.loginfo("epsilon>>" + str(epsilon))
+        
+        linear_speed = cmd_vel_value.linear.x
+        angular_speed = cmd_vel_value.angular.z
+        
+        linear_speed_plus = linear_speed + epsilon
+        linear_speed_minus = linear_speed - epsilon
+        angular_speed_plus = angular_speed + epsilon
+        angular_speed_minus = angular_speed - epsilon
+        
+        while not rospy.is_shutdown():
+            current_odometry = self._check_odom_ready()
+            # IN turtlebot3 the odometry angular readings are inverted, so we have to invert the sign.
+            odom_linear_vel = current_odometry.twist.twist.linear.x
+            odom_angular_vel = current_odometry.twist.twist.angular.z
+            
+            rospy.loginfo("Linear VEL=" + str(odom_linear_vel) + ", ?RANGE=[" + str(linear_speed_minus) + ","+str(linear_speed_plus)+"]")
+            rospy.loginfo("Angular VEL=" + str(odom_angular_vel) + ", ?RANGE=[" + str(angular_speed_minus) + ","+str(angular_speed_plus)+"]")
+            
+            linear_vel_are_close = (odom_linear_vel <= linear_speed_plus) and (odom_linear_vel > linear_speed_minus)
+            angular_vel_are_close = (odom_angular_vel <= angular_speed_plus) and (odom_angular_vel > angular_speed_minus)
+            
+            if linear_vel_are_close and angular_vel_are_close:
+                rospy.loginfo("Reached Velocity!")
+                end_wait_time = rospy.get_rostime().to_sec()
+                break
+            
+            # if self.check_if_crashed():
+            #     rospy.logerr("TurtleBot 3 crashed while trying to achieve target Twist.")
+            #     end_wait_time = rospy.get_rostime().to_sec()
+            #     break
+
+            rospy.loginfo("Not there yet, keep waiting...")
+            rate.sleep()
+        delta_time = end_wait_time- start_wait_time
+        rospy.loginfo("[Wait Time=" + str(delta_time)+"]")
+        
+        rospy.loginfo("END wait_until_twist_achieved...")
+        
+        return delta_time
+
+    ##### Turtlebot3Env functions override END

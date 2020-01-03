@@ -2,5 +2,5 @@
     <!-- This version uses the openai_ros environments -->
     <rosparam command="load" file="$(find coop_mapping)/config/start_training_1_robot_params.yaml" />
     <!-- Launch the training system -->
-    <node pkg="coop_mapping" name="turtlebot3_world_mapping_qlearn" type="start_training_1_robot.py" output="screen"/>
+    <!-- <node pkg="coop_mapping" name="turtlebot3_world_mapping_qlearn" type="start_training_1_robot.py" output="screen"/> -->
 </launch>

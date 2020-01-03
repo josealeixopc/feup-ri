@@ -16,7 +16,7 @@ VS_ROS_DEBUG = 1
 if __name__ == '__main__':
 
     if VS_ROS_DEBUG:
-        raw_input('Waiting for VS ROS debugger to be attached... Press a key once it has been attached.')
+        raw_input('Waiting for VS ROS debugger to be attached... Press a key and ENTER once it has been attached: ')
 
     ### Export ENV variables BEGIN
     
@@ -35,6 +35,9 @@ if __name__ == '__main__':
         '/turtlebot3/task_and_robot_environment_name')
     env = StartOpenAI_ROS_Environment(
         task_and_robot_environment_name)
+    
+    # MAKE SURE TO USE loginfo INSTEAD OF logdebug! 
+    # logdebug doesn't appear in \rosout for some reason (check rospy API), therefore it won't appear in rosconsole.
     # Create the Gym environment
     rospy.loginfo("Gym environment done")
     rospy.loginfo("Starting Learning")
