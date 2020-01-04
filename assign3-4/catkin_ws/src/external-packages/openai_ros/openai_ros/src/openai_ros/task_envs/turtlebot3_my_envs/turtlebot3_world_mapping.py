@@ -26,10 +26,10 @@ class TurtleBot3WorldMappingEnv(turtlebot3_env.TurtleBot3Env):
                                                " DOESNT exist, execute: mkdir -p " + ros_ws_abspath + \
                                                "/src;cd " + ros_ws_abspath + ";catkin_make"
 
-        # Depending on which environment we're in, decide to launch Gazebo with or without GUI
+        # Depending on which environment we're in, decide to launch Gazebo with or without GUI.
         gazebo_launch_file = "start_empty_tb3_world.launch"
 
-        if os.environ.get('GAZEBO_GUI') == 'false':
+        if os.environ.get('ENV') == 'deploy':
             gazebo_launch_file = "start_empty_tb3_world_no_gui.launch"
 
         ROSLauncher(rospackage_name="coop_mapping",
