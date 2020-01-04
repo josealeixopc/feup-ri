@@ -2,6 +2,7 @@
 
 ## TODO
 
+- Try to implement baselines from here https://github.com/lilianweng/deep-reinforcement-learning-gym. Using Python 2.7 does not let you install Stable-baselins.
 - Make ENV reset with negative reward if robot collides with wall (use pseudo_collison_detection.py)-
     - The `turlebot3_world_mapping` env is a subclass of `turtlebot3_env` which is in itself a subclass of `robot_gazebo_env`, therefore we can **override** all functions in our custom environment. So, we should override the `_is_done` function so that it is `done` when the robot collides.
 - Create simple RL environment for ONE robot

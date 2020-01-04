@@ -19,8 +19,11 @@ class TurtleBot3WorldMappingEnv(turtlebot3_env.TurtleBot3Env):
         closed room with columns.
         It will learn how to move around without crashing.
         """
-        # This is the path where the simulation files, the Task and the Robot gits will be downloaded if not there
+        # This is the path where the simulation files, the Task and the Robot gits will be downloaded if not there            
         ros_ws_abspath = rospy.get_param("/turtlebot3/ros_ws_abspath", None)
+        if os.environ.get('ROS_WS') != None:
+            ros_ws_abspath = os.environ.get('ROS_WS')
+
         assert ros_ws_abspath is not None, "You forgot to set ros_ws_abspath in your yaml file of your main RL script. Set ros_ws_abspath: \'YOUR/SIM_WS/PATH\'"
         assert os.path.exists(ros_ws_abspath), "The Simulation ROS Workspace path " + ros_ws_abspath + \
                                                " DOESNT exist, execute: mkdir -p " + ros_ws_abspath + \
@@ -89,8 +92,10 @@ class TurtleBot3WorldMappingEnv(turtlebot3_env.TurtleBot3Env):
         high = numpy.full((num_laser_readings), self.max_laser_value)
         low = numpy.full((num_laser_readings), self.min_laser_value)
         
+        multi_discrete_shape = [round(self.max_laser_value)] * self.new_ranges
+
         # We only use two integers
-        self.observation_space = spaces.Box(low, high)
+        self.observation_space = spaces.MultiDiscrete(multi_discrete_shape)
         
         rospy.loginfo("ACTION SPACES TYPE===>"+str(self.action_space))
         rospy.loginfo("OBSERVATION SPACES TYPE===>"+str(self.observation_space))
@@ -264,7 +269,7 @@ class TurtleBot3WorldMappingEnv(turtlebot3_env.TurtleBot3Env):
 
         collision_detector = PseudoCollisionDetector()
 
-        return collision_detector.collision_detected(laser_scan_message, self.min_range)
+        return collision_detector.collision_detected(laser_scan_message, 0.005)
 
     ##### Turtlebot3Env functions override BEGIN
 
@@ -333,10 +338,10 @@ class TurtleBot3WorldMappingEnv(turtlebot3_env.TurtleBot3Env):
                 end_wait_time = rospy.get_rostime().to_sec()
                 break
             
-            # if self.check_if_crashed():
-            #     rospy.logerr("TurtleBot 3 crashed while trying to achieve target Twist.")
-            #     end_wait_time = rospy.get_rostime().to_sec()
-            #     break
+            if self.check_if_crashed():
+                rospy.logerr("TurtleBot 3 crashed while trying to achieve target Twist.")
+                end_wait_time = rospy.get_rostime().to_sec()
+                break
 
             rospy.loginfo("Not there yet, keep waiting...")
             rate.sleep()
