@@ -34,17 +34,34 @@ images_abs_dir = script_dir + os.path.sep + images_relative_dir
 def resize_proportionally(image, scale):
     return cv2.resize(image, (int(image.shape[1] * scale), int(image.shape[0] * scale)))
 
-def compare_images(image1_file, image2_file):
+def compare_images(image1_file, image2_file, image1_abs_path=False, image2_abs_path=False):
 
     logger.debug("Loading both images for comparison.")
 
-    image1 = cv2.imread(images_abs_dir + os.path.sep + image1_file)
-    image2 = cv2.imread(images_abs_dir + os.path.sep + image2_file)
+    if image1_abs_path:
+        image1 = cv2.imread(image1_file)
+    else:    
+        image1 = cv2.imread(images_abs_dir + os.path.sep + image1_file)
+
+    if image2_abs_path:
+        image2 = cv2.imread(image2_file)
+    else:
+        image2 = cv2.imread(images_abs_dir + os.path.sep + image2_file)
 
     # TEMPLATE MACTHING works only if the image has the same size or else really similiar.
 
     # FEATURE DETECTION/MATCHING allows comparing images with different sizes, colors, etc...
     # We will use the SIFT algorithm for feature detection
+
+    # Resize images so that they have similiar dimensions
+    height1, width1, channels1 = image1.shape
+    height2, width2, channels2 = image2.shape
+
+    min_height = min([height1, height2])
+    min_width = min ([width1, width2])
+
+    image1 = cv2.resize(image1, (min_width, min_height))
+    image2 = cv2.resize(image2, (min_width, min_height))
 
     logger.debug("Executing SIFT...")
 
@@ -87,7 +104,7 @@ def compare_images(image1_file, image2_file):
 
     logger.info("Estimated similarity ratio: {}".format(estimated_similarity_ratio))
 
-    window_size = (500, 900)
+    window_size = (min_width*2, min_height)
 
     result = cv2.drawMatches(image1, kp_1, image2, kp_2, good_points, None)
     cv2.imshow("Result", cv2.resize(result, window_size))

@@ -57,20 +57,6 @@ class TurtleBot3WorldMappingEnv(turtlebot3_env.TurtleBot3Env):
         # We set the reward range, which is not compulsory but here we do it.
         self.reward_range = (-numpy.inf, numpy.inf)
         
-        
-        #number_observations = rospy.get_param('/turtlebot3/n_observations')
-        """
-        We set the Observation space for the 6 observations
-        cube_observations = [
-            round(current_disk_roll_vel, 0),
-            round(y_distance, 1),
-            round(roll, 1),
-            round(pitch, 1),
-            round(y_linear_speed,1),
-            round(yaw, 1),
-        ]
-        """
-        
         # Actions and Observations
         self.linear_forward_speed = rospy.get_param('/turtlebot3/linear_forward_speed')
         self.linear_turn_speed = rospy.get_param('/turtlebot3/linear_turn_speed')
@@ -92,6 +78,10 @@ class TurtleBot3WorldMappingEnv(turtlebot3_env.TurtleBot3Env):
         high = numpy.full((num_laser_readings), self.max_laser_value)
         low = numpy.full((num_laser_readings), self.min_laser_value)
         
+        """
+        An observation is a MultiDiscrete element with R elements, where R is the number of laser scan rays we are using for observation.
+        """
+
         multi_discrete_shape = [round(self.max_laser_value)] * self.new_ranges
 
         # We only use two integers
@@ -133,7 +123,7 @@ class TurtleBot3WorldMappingEnv(turtlebot3_env.TurtleBot3Env):
 
     def _set_action(self, action):
         """
-        This set action will Set the linear and angular speed of the turtlebot2
+        This set action will Set the linear and angular speed of the TurtleBot3
         based on the action number given.
         :param action: The action integer that set s what movement to do next.
         """
@@ -153,7 +143,7 @@ class TurtleBot3WorldMappingEnv(turtlebot3_env.TurtleBot3Env):
             angular_speed = -1*self.angular_speed
             self.last_action = "TURN_RIGHT"
         
-        # We tell TurtleBot2 the linear and angular speed to set to execute
+        # We tell TurtleBot3 the linear and angular speed to set to execute
         self.move_base(linear_speed, angular_speed, epsilon=0.05, update_rate=10)
         
         rospy.loginfo("END Set Action ==>"+str(action))
@@ -162,7 +152,7 @@ class TurtleBot3WorldMappingEnv(turtlebot3_env.TurtleBot3Env):
         """
         Here we define what sensor data defines our robots observations
         To know which Variables we have acces to, we need to read the
-        TurtleBot2Env API DOCS
+        TurtleBot3Env API DOCS
         :return:
         """
         rospy.loginfo("Start Get Observation ==>")
@@ -189,10 +179,10 @@ class TurtleBot3WorldMappingEnv(turtlebot3_env.TurtleBot3Env):
         imu_data = self.get_imu()
         linear_acceleration_magnitude = self.get_vector_magnitude(imu_data.linear_acceleration)
         if linear_acceleration_magnitude > self.max_linear_aceleration:
-            rospy.logerr("TurtleBot2 Crashed==>"+str(linear_acceleration_magnitude)+">"+str(self.max_linear_aceleration))
+            rospy.logerr("TurtleBot3 Crashed==>"+str(linear_acceleration_magnitude)+">"+str(self.max_linear_aceleration))
             self._episode_done = True
         else:
-            rospy.logerr("DIDNT crash TurtleBot2 ==>"+str(linear_acceleration_magnitude)+">"+str(self.max_linear_aceleration))
+            rospy.logerr("DIDNT crash TurtleBot3 ==>"+str(linear_acceleration_magnitude)+">"+str(self.max_linear_aceleration))
         
 
         return self._episode_done
