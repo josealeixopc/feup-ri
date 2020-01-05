@@ -31,6 +31,33 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 images_relative_dir = "image_examples"
 images_abs_dir = script_dir + os.path.sep + images_relative_dir
 
+
+def my_compare_images(image_1, image_2):
+
+    commutative_image_diff = get_image_difference(image_1, image_2)
+
+    if commutative_image_diff < 1:
+        print "Matched"
+        return commutative_image_diff
+    return 10000 #random failure value
+
+def get_image_difference(image_1, image_2):
+    """
+    From here: https://stackoverflow.com/a/45485883/7308982
+    I've used combination of both histogram difference and template matching because not one method was working for me 100% of the times. 
+    I've given less importance to histogram method though.
+    """
+    first_image_hist = cv2.calcHist([image_1], [0], None, [256], [0, 256])
+    second_image_hist = cv2.calcHist([image_2], [0], None, [256], [0, 256])
+
+    img_hist_diff = cv2.compareHist(first_image_hist, second_image_hist, cv2.HISTCMP_BHATTACHARYYA)
+    img_template_probability_match = cv2.matchTemplate(first_image_hist, second_image_hist, cv2.TM_CCOEFF_NORMED)[0][0]
+    img_template_diff = 1 - img_template_probability_match
+
+    # taking only 10% of histogram diff, since it's less accurate than template method
+    commutative_image_diff = (img_hist_diff / 10) + img_template_diff
+    return commutative_image_diff
+
 def resize_proportionally(image, scale):
     return cv2.resize(image, (int(image.shape[1] * scale), int(image.shape[0] * scale)))
 
@@ -48,8 +75,8 @@ def compare_cv2_images(cv_image1, cv_image2):
     # We will use the SIFT algorithm for feature detection
 
     # Resize images so that they have similiar dimensions
-    height1, width1, channels1 = cv_image1.shape
-    height2, width2, channels2 = cv_image2.shape
+    height1, width1 = cv_image1.shape
+    height2, width2 = cv_image2.shape
 
     min_height = min([height1, height2])
     min_width = min ([width1, width2])
@@ -81,7 +108,7 @@ def compare_cv2_images(cv_image1, cv_image2):
     good_points = []
 
     # ratio test (low ratio means fewer but more precise matches; high ratio means the opposite)
-    ratio = 1
+    ratio = 0.5
 
     for m, n in matches:
         if m.distance < ratio * n.distance:
@@ -107,6 +134,14 @@ def compare_cv2_images(cv_image1, cv_image2):
     cv2.destroyAllWindows()
 
     return estimated_similarity_ratio
+
+def match_shapes_cv2_images(cv_image1, cv_image2):
+    _, contours, _ = cv2.findContours(cv_image1, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    cnt1 = contours[0]
+    _, contours, _ = cv2.findContours(cv_image2, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    cnt2 = contours[0]
+    ret = cv2.matchShapes(cnt1, cnt2, 1, 0.0)
+    print( ret )
 
 def compare_images(image1_file, image2_file, image1_abs_path=False, image2_abs_path=False):
 

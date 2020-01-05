@@ -107,33 +107,62 @@ def fill(data, start_coords, fill_value, border_value, connectivity=8):
     return filled_data, borders
 
 def compare_current_map_to_actual_map(actual_map_file):
-    # Run command to save current map in \map topic to a file
-    # current_map_file_location = "/home/jazz/Downloads/my_map"
-    current_map_file_location = "/home/jazz/Downloads/map2"
+    """
+    Runs the map_server command to save the current image of the map runs comparison between the current
+    robot's image and the actual map.
+
+    Returns a float which represents the difference between the maps. A LOWER VALUE means the images are MORE SIMILAR.
+    """
+    current_map_file_location = "/tmp/current_tb3_map"
 
 
     command=Command("rosrun map_server map_saver -f {}".format(current_map_file_location))
     # command.run(timeout=10)
 
-    current_map_image = cv2.imread(current_map_file_location + ".pgm")
-    actual_map_image = cv2.imread(actual_map_file)
+    current_map_image = cv2.imread(current_map_file_location + ".pgm", cv2.IMREAD_GRAYSCALE)
+    actual_map_image = cv2.imread(actual_map_file, cv2.IMREAD_GRAYSCALE)
 
     # Rotate 90 degrees to the left by rotating 3 times to the right
     current_map_image = np.rot90(current_map_image, k=3)
     
     # Resize for test purposes 
     actual_map_image = cv2.resize(actual_map_image, (500, 500))
-    actual_map_image = cv2.cvtColor(actual_map_image, cv2.COLOR_BGR2GRAY)
+    # actual_map_image = cv2.cvtColor(actual_map_image, cv2.COLOR_BGR2GRAY)
 
     h, w = actual_map_image.shape[:2]
     
     # Get the borders of the area inside the map
-    filled_data, borders = fill(actual_map_image, [h/2 + 20, w/2 + 20], 127, 0, connectivity=8)
+    # Floodfill actual map area with value 128, i.e. mid-grey. 
+    # Some pixels may have darker colors, so I went with 50.
+    floodval = 50
+    cv2.floodFill(actual_map_image, None, (h/2 + 10, w/2 + 10), floodval)
 
-    rgb_borders = cv2.cvtColor(borders,cv2.COLOR_GRAY2RGB)
+    # Extract filled area alone
+    walkable_map = ((actual_map_image==floodval) * 255).astype(np.uint8)
 
-    image_similarity.compare_cv2_images(current_map_image, rgb_borders)
+    # Find edges of flooded area (walkable_map)
+    walkable_map_edges = cv2.Canny(walkable_map, 100, 200)
 
+    # Find black lines (edges) of the current map, but don't build contour
+    current_map_edges = current_map_image.copy()
+    current_map_edges[current_map_edges > 0] = 255
+    current_map_edges = cv2.bitwise_not(current_map_edges)
+
+    # Cropping final images
+    x, y, w, h = cv2.boundingRect(current_map_edges)
+    current_map_edges = current_map_edges[y:y+h, x:x+w]
+
+    x, y, w, h = cv2.boundingRect(walkable_map_edges)
+    walkable_map_edges = walkable_map_edges[y:y+h, x:x+w]
+
+    # cv2.imshow("Walkable map", walkable_map)
+    # cv2.imshow("Current Map", current_map_image)
+    # cv2.imshow("Walkable Map Edges", walkable_map_edges)
+    # cv2.imshow("Current Map Edges", current_map_edges)
+    # cv2.waitKey(0)
+
+    image_diff = image_similarity.my_compare_images(walkable_map_edges, current_map_edges)
+    return image_diff
 
 if __name__ == "__main__":
-    compare_current_map_to_actual_map(images_abs_dir + os.path.sep + "turtlebot3_world_map.pgm")
+    compare_current_map_to_actual_map(images_abs_dir + os.path.sep + "turtlebot3_house_map.pgm")
