@@ -34,19 +34,13 @@ images_abs_dir = script_dir + os.path.sep + images_relative_dir
 def resize_proportionally(image, scale):
     return cv2.resize(image, (int(image.shape[1] * scale), int(image.shape[0] * scale)))
 
-def compare_images(image1_file, image2_file, image1_abs_path=False, image2_abs_path=False):
-
-    logger.debug("Loading both images for comparison.")
-
-    if image1_abs_path:
-        image1 = cv2.imread(image1_file)
-    else:    
-        image1 = cv2.imread(images_abs_dir + os.path.sep + image1_file)
-
-    if image2_abs_path:
-        image2 = cv2.imread(image2_file)
-    else:
-        image2 = cv2.imread(images_abs_dir + os.path.sep + image2_file)
+def compare_cv2_images(cv_image1, cv_image2):
+    """Compares CV images that result from the cv2.imread function
+    
+    Arguments:
+        cv_image1 {[CV2.IMAGE]}
+        cv_image2 {[CV2.IMAGE]}
+    """
 
     # TEMPLATE MACTHING works only if the image has the same size or else really similiar.
 
@@ -54,14 +48,14 @@ def compare_images(image1_file, image2_file, image1_abs_path=False, image2_abs_p
     # We will use the SIFT algorithm for feature detection
 
     # Resize images so that they have similiar dimensions
-    height1, width1, channels1 = image1.shape
-    height2, width2, channels2 = image2.shape
+    height1, width1, channels1 = cv_image1.shape
+    height2, width2, channels2 = cv_image2.shape
 
     min_height = min([height1, height2])
     min_width = min ([width1, width2])
 
-    image1 = cv2.resize(image1, (min_width, min_height))
-    image2 = cv2.resize(image2, (min_width, min_height))
+    image1 = cv2.resize(cv_image1, (min_width, min_height))
+    image2 = cv2.resize(cv_image2, (min_width, min_height))
 
     logger.debug("Executing SIFT...")
 
@@ -87,7 +81,7 @@ def compare_images(image1_file, image2_file, image1_abs_path=False, image2_abs_p
     good_points = []
 
     # ratio test (low ratio means fewer but more precise matches; high ratio means the opposite)
-    ratio = 0.4
+    ratio = 1
 
     for m, n in matches:
         if m.distance < ratio * n.distance:
@@ -108,10 +102,28 @@ def compare_images(image1_file, image2_file, image1_abs_path=False, image2_abs_p
 
     result = cv2.drawMatches(image1, kp_1, image2, kp_2, good_points, None)
     cv2.imshow("Result", cv2.resize(result, window_size))
+    logger.info("Waiting for input to end program...")
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
     return estimated_similarity_ratio
+
+def compare_images(image1_file, image2_file, image1_abs_path=False, image2_abs_path=False):
+
+    logger.debug("Loading both images for comparison.")
+
+    if image1_abs_path:
+        image1 = cv2.imread(image1_file)
+    else:    
+        image1 = cv2.imread(images_abs_dir + os.path.sep + image1_file)
+
+    if image2_abs_path:
+        image2 = cv2.imread(image2_file)
+    else:
+        image2 = cv2.imread(images_abs_dir + os.path.sep + image2_file)
+
+    compare_cv2_images(image1, image2)
+    
 
 
 if __name__ == "__main__":
