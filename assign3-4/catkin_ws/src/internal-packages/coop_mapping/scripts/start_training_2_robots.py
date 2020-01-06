@@ -21,7 +21,7 @@ if __name__ == '__main__':
     ### Export ENV variables BEGIN
     
     # Add node name to ROS logging messages 
-    os.environ['ROSCONSOLE_FORMAT']='[${severity}] [${time}]: ${node}: ${message}'
+    os.environ['ROSCONSOLE_FORMAT']='[${severity}] [${time}]: ${logger}: ${node}: ${message}'
     
     # Set TB3 model
     os.environ['TURTLEBOT3_MODEL'] = 'burger'

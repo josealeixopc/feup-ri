@@ -235,7 +235,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         discretized_ranges = []
         mod = len(data.ranges)/new_ranges
         
-        rospy.loginfo("data=" + str(data))
+        # rospy.loginfo("data=" + str(data))
         rospy.loginfo("new_ranges=" + str(new_ranges))
         rospy.loginfo("mod=" + str(mod))
         

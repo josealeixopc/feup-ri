@@ -27,7 +27,7 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
         The namespace for each robot is "tb3_0" and "tb3_1", which come from the "spawn_2_robots.launch" from "coop_mapping".
         The namespaces are sometimes hardcoded in the functions, so take care when changing things.
         """
-        rospy.logdebug("Start TurtleBot3TwoRobotsEnv INIT...")
+        rospy.loginfo("Start TurtleBot3TwoRobotsEnv INIT...")
     
         # Init namespace
         ROBOT_1_NAMESPACE = '/tb3_0'
@@ -85,7 +85,7 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
 
         self.gazebo.pauseSim()
         
-        rospy.logdebug("Finished TurtleBot3TwoRobotsEnv INIT...")
+        rospy.loginfo("Finished TurtleBot3TwoRobotsEnv INIT...")
 
     # Methods needed by the RobotGazeboEnv
     # ----------------------------
@@ -104,21 +104,21 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
     # ----------------------------
 
     def _check_all_sensors_ready(self):
-        rospy.logdebug("START ALL SENSORS READY")
+        rospy.loginfo("START ALL SENSORS READY")
         for ns in self.robot_namespaces:
             self._check_odom_ready(ns)
             self._check_imu_ready(ns)
             self._check_laser_scan_ready(ns)
-        rospy.logdebug("ALL SENSORS READY")
+        rospy.loginfo("ALL SENSORS READY")
 
 
     def _check_odom_ready(self, namespace):
         self.odom[namespace] = None
-        rospy.logdebug("Waiting for {}/odom to be READY...".format(namespace))
+        rospy.loginfo("Waiting for {}/odom to be READY...".format(namespace))
         while self.odom[namespace] is None and not rospy.is_shutdown():
             try:
                 self.odom[namespace] = rospy.wait_for_message(namespace + "/odom", Odometry, timeout=5.0)
-                rospy.logdebug("Current {}/odom READY=>".format(namespace))
+                rospy.loginfo("Current {}/odom READY=>".format(namespace))
 
             except:
                 rospy.logerr("Current {}/odom not ready yet, retrying for getting odom".format(namespace))
@@ -128,11 +128,11 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
         
     def _check_imu_ready(self, namespace):
         self.imu[namespace] = None
-        rospy.logdebug("Waiting for {}/imu to be READY...".format(namespace))
+        rospy.loginfo("Waiting for {}/imu to be READY...".format(namespace))
         while self.imu[namespace] is None and not rospy.is_shutdown():
             try:
                 self.imu[namespace] = rospy.wait_for_message(namespace + "/imu", Imu, timeout=5.0)
-                rospy.logdebug("Current {}/imu READY=>".format(namespace))
+                rospy.loginfo("Current {}/imu READY=>".format(namespace))
 
             except:
                 rospy.logerr("Current {}/imu not ready yet, retrying for getting imu".format(namespace))
@@ -142,11 +142,11 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
 
     def _check_laser_scan_ready(self, namespace):
         self.laser_scan[namespace] = None
-        rospy.logdebug("Waiting for {}/scan to be READY...".format(namespace))
+        rospy.loginfo("Waiting for {}/scan to be READY...".format(namespace))
         while self.laser_scan[namespace] is None and not rospy.is_shutdown():
             try:
                 self.laser_scan[namespace] = rospy.wait_for_message(namespace + "/scan", LaserScan, timeout=1.0)
-                rospy.logdebug("Current {}/scan READY=>".format(namespace))
+                rospy.loginfo("Current {}/scan READY=>".format(namespace))
 
             except:
                 rospy.logerr("Current {}/scan not ready yet, retrying for getting laser_scan".format(namespace))
@@ -180,15 +180,15 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
         """
         rate = rospy.Rate(10)  # 10hz
         while self._cmd_vel_pub[namespace].get_num_connections() == 0 and not rospy.is_shutdown():
-            rospy.logdebug("No susbribers to _cmd_vel_pub yet so we wait and try again")
+            rospy.loginfo("No susbribers to _cmd_vel_pub of {} yet so we wait and try again".format(namespace))
             try:
                 rate.sleep()
             except rospy.ROSInterruptException:
                 # This is to avoid error when world is rested, time when backwards.
                 pass
-        rospy.logdebug("_cmd_vel_pub Publisher of {} Connected".format(namespace))
+        rospy.loginfo("_cmd_vel_pub Publisher of {} Connected".format(namespace))
 
-        rospy.logdebug("All Publishers READY")
+        rospy.loginfo("All Publishers READY")
     
     # Methods that the TrainingEnvironment will need to define here as virtual
     # because they will be used in RobotGazeboEnv GrandParentClass and defined in the
@@ -238,7 +238,7 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
         cmd_vel_value = Twist()
         cmd_vel_value.linear.x = linear_speed
         cmd_vel_value.angular.z = angular_speed
-        rospy.logdebug("TurtleBot3 Base Twist Cmd>>" + str(cmd_vel_value))
+        rospy.loginfo("TurtleBot3 Base Twist Cmd>>" + str(cmd_vel_value))
         self._check_publishers_connection(namespace)
         self._cmd_vel_pub[namespace].publish(cmd_vel_value)
         self.wait_until_twist_achieved(cmd_vel_value,
@@ -255,15 +255,15 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
         :param update_rate: Rate at which we check the odometry.
         :return:
         """
-        rospy.logdebug("START wait_until_twist_achieved...")
+        rospy.loginfo("START wait_until_twist_achieved...")
         
         rate = rospy.Rate(update_rate)
         start_wait_time = rospy.get_rostime().to_sec()
         end_wait_time = 0.0
         epsilon = 0.05
         
-        rospy.logdebug("Desired Twist Cmd>>" + str(cmd_vel_value))
-        rospy.logdebug("epsilon>>" + str(epsilon))
+        rospy.loginfo("Desired Twist Cmd>>" + str(cmd_vel_value))
+        rospy.loginfo("epsilon>>" + str(epsilon))
         
         linear_speed = cmd_vel_value.linear.x
         angular_speed = cmd_vel_value.angular.z
@@ -279,22 +279,22 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
             odom_linear_vel = current_odometry.twist.twist.linear.x
             odom_angular_vel = -1*current_odometry.twist.twist.angular.z
             
-            rospy.logdebug("Linear VEL=" + str(odom_linear_vel) + ", ?RANGE=[" + str(linear_speed_minus) + ","+str(linear_speed_plus)+"]")
-            rospy.logdebug("Angular VEL=" + str(odom_angular_vel) + ", ?RANGE=[" + str(angular_speed_minus) + ","+str(angular_speed_plus)+"]")
+            rospy.loginfo("Linear VEL of {}=".format(namespace) + str(odom_linear_vel) + ", ?RANGE=[" + str(linear_speed_minus) + ","+str(linear_speed_plus)+"]")
+            rospy.loginfo("Angular VEL of {}=".format(namespace) + str(odom_angular_vel) + ", ?RANGE=[" + str(angular_speed_minus) + ","+str(angular_speed_plus)+"]")
             
             linear_vel_are_close = (odom_linear_vel <= linear_speed_plus) and (odom_linear_vel > linear_speed_minus)
             angular_vel_are_close = (odom_angular_vel <= angular_speed_plus) and (odom_angular_vel > angular_speed_minus)
             
             if linear_vel_are_close and angular_vel_are_close:
-                rospy.logdebug("Reached Velocity!")
+                rospy.loginfo("{} reached Velocity!".format(namespace))
                 end_wait_time = rospy.get_rostime().to_sec()
                 break
-            rospy.logdebug("Not there yet, keep waiting...")
+            rospy.loginfo("{} is not there yet, keep waiting...".format(namespace))
             rate.sleep()
         delta_time = end_wait_time- start_wait_time
-        rospy.logdebug("[Wait Time=" + str(delta_time)+"]")
+        rospy.loginfo("[Wait Time=" + str(delta_time)+"]")
         
-        rospy.logdebug("END wait_until_twist_achieved...")
+        rospy.loginfo("END wait_until_twist_achieved...")
         
         return delta_time
         
