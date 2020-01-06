@@ -2,6 +2,8 @@
 
 ## TODO
 
+- Check [this](https://answers.ros.org/question/205521/robot-coordinates-in-map/) and [this](https://answers.ros.org/question/159171/how-to-get-robot-position-xy-in-a-map/) to try to get map into observation.
+- Try to get area of map into reward function (maybe outer bounds of map relative to the robot position).
 - Try to implement baselines from here https://github.com/lilianweng/deep-reinforcement-learning-gym. Using Python 2.7 does not let you install Stable-baselins.
 - Make ENV reset with negative reward if robot collides with wall (use pseudo_collison_detection.py)-
     - The `turlebot3_world_mapping` env is a subclass of `turtlebot3_env` which is in itself a subclass of `robot_gazebo_env`, therefore we can **override** all functions in our custom environment. So, we should override the `_is_done` function so that it is `done` when the robot collides.
