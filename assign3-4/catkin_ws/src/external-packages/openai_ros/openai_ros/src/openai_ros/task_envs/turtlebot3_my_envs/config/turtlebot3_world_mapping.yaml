@@ -7,7 +7,7 @@ turtlebot3: #namespace
 
     linear_forward_speed: 0.2 # Speed for going forwards
     linear_turn_speed: 0.00 # Lienare speed when turning
-    angular_speed: 0.5 # Angular speed when turning Left or Right
+    angular_speed: 1.0 # Angular speed when turning Left or Right
     init_linear_forward_speed: 0.0 # Initial linear speed in which we start each episode
     init_linear_turn_speed: 0.0 # Initial angular speed in shich we start each episode
     

@@ -157,20 +157,20 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
         self.odom['/tb3_0'] = data
     
     def _imu_callback_tb3_0(self, data):
-        self.imu['tb3_0'] = data
+        self.imu['/tb3_0'] = data
 
     def _laser_scan_callback_tb3_0(self, data):
-        self.laser_scan["tb3_0"] = data
+        self.laser_scan["/tb3_0"] = data
 
     # TB3_1
     def _odom_callback_tb3_1(self, data):
-        self.odom["tb3_1"] = data
+        self.odom['/tb3_1'] = data
     
     def _imu_callback_tb3_1(self, data):
-        self.imu["tb3_1"] = data
+        self.imu['/tb3_1'] = data
 
     def _laser_scan_callback_tb3_1(self, data):
-        self.laser_scan["tb3_1"] = data
+        self.laser_scan['/tb3_1'] = data
 
         
     def _check_publishers_connection(self, namespace):
@@ -225,7 +225,7 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
         
     # Methods that the TrainingEnvironment will need.
     # ----------------------------
-    def move_base(self, linear_speed, angular_speed, namespace, epsilon=0.01, update_rate=10):
+    def move_base(self, linear_speed, angular_speed, namespace, epsilon=0.05, update_rate=10):
         """
         It will move the base based on the linear and angular speeds given.
         It will wait untill those twists are achived reading from the odometry topic.

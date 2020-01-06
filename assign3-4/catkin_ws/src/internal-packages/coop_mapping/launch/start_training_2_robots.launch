@@ -1,7 +1,7 @@
 <launch>
     <!-- ROSCONSOLE config form here: http://wiki.ros.org/rospy/Overview/Logging#Advanced:_Override_Logging_Configuration -->
-    <env name="ROS_PYTHON_LOG_CONFIG_FILE" value="$(find coop_mapping)/config/python_logging.conf"/>
-    <env name="ROSCONSOLE_CONFIG_FILE" value="$(find coop_mapping)/config/custom_rosconsole.conf"/>
+    <!-- <env name="ROS_PYTHON_LOG_CONFIG_FILE" value="$(find coop_mapping)/config/python_logging.conf"/>
+    <env name="ROSCONSOLE_CONFIG_FILE" value="$(find coop_mapping)/config/custom_rosconsole.conf"/> -->
     <!-- This version uses the openai_ros environments -->
     <rosparam command="load" file="$(find coop_mapping)/config/start_training_2_robots_params.yaml" />
     <!-- Launch the training system -->

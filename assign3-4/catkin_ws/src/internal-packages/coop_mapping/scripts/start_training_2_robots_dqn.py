@@ -1,5 +1,14 @@
 #!/usr/bin/env python
 
+import start_training_1_robot_dqn
+
+VS_ROS_DEBUG = 1
+ENV_NAME = 'TurtleBot3WorldMapping2Robots-v0'
+
+if __name__ == '__main__':
+    start_training_1_robot_dqn.train(ENV_NAME)#!/usr/bin/env python
+
+import errno
 import os
 from datetime import datetime
 import gym
@@ -32,7 +41,7 @@ def create_dir(path):
         if exc.errno != errno.EEXIST:
             raise
 
-if __name__ == '__main__':
+def train(environment):
     """DQN agent implementation based from https://github.com/keras-rl/keras-rl/blob/master/examples/dqn_cartpole.py
     """
 
@@ -56,8 +65,12 @@ if __name__ == '__main__':
     rospy.init_node('turtlebot3_world_mapping_dqn', anonymous=True, log_level=rospy.DEBUG)
 
     # Init OpenAI_ROS ENV
-    task_and_robot_environment_name = ENV_NAME
+    task_and_robot_environment_name = environment
     env = StartOpenAI_ROS_Environment(task_and_robot_environment_name)
+
+    # Save starting time
+    now = datetime.now()
+    current_time = now.strftime("%Y-%m-%d-%H-%M-%S")
     
     # MAKE SURE TO USE loginfo INSTEAD OF logdebug! 
     # logdebug doesn't appear in \rosout for some reason (check rospy API), therefore it won't appear in rosconsole.
@@ -68,7 +81,9 @@ if __name__ == '__main__':
     # Set the logging system
     rospack = rospkg.RosPack()
     pkg_path = rospack.get_path('coop_mapping')
-    outdir = pkg_path + '/training_results'
+    outdir = pkg_path + os.path.sep + 'training_results' + \
+        os.path.sep + "{}-dqn".format(current_time)
+    create_dir(outdir)
     env = wrappers.Monitor(env, outdir, force=True)
     rospy.loginfo("Monitor Wrapper started")
 
@@ -104,13 +119,15 @@ if __name__ == '__main__':
     rospack = rospkg.RosPack()
     pkg_path = rospack.get_path('coop_mapping')
 
-    now = datetime.now()
-    current_time = now.strftime("%Y-%m-%d-%H-%M-%S")
-
-    file_name = pkg_path + os.path.sep + "training_weights" + os.path.sep + "{}-dqn_{}_weights.h5f".format(current_time, ENV_NAME)
+    file_name = pkg_path + os.path.sep + "training_weights" + os.path.sep + "{}-dqn_{}_weights.h5f".format(current_time, environment)
     create_dir(file_name)
 
     dqn.save_weights(file_name, overwrite=True)
 
+    env.close()
+
     # Finally, evaluate our algorithm for 5 episodes.
     # dqn.test(env, nb_episodes=5, visualize=False)
+
+if __name__ == '__main__':
+    train(ENV_NAME)
