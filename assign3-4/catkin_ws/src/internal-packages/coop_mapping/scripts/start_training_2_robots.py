@@ -11,7 +11,7 @@ import rospy
 import rospkg
 from openai_ros.openai_ros_common import StartOpenAI_ROS_Environment
 
-VS_ROS_DEBUG = 1
+VS_ROS_DEBUG = 0
 
 if __name__ == '__main__':
 

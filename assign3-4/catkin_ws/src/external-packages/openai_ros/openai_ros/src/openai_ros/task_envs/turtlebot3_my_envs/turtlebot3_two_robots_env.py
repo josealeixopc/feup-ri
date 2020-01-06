@@ -225,7 +225,7 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
         
     # Methods that the TrainingEnvironment will need.
     # ----------------------------
-    def move_base(self, linear_speed, angular_speed, namespace, epsilon=0.05, update_rate=10):
+    def move_base(self, linear_speed, angular_speed, namespace, epsilon=0.01, update_rate=10):
         """
         It will move the base based on the linear and angular speeds given.
         It will wait untill those twists are achived reading from the odometry topic.
@@ -245,6 +245,15 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
                                         epsilon,
                                         update_rate,
                                         namespace)
+
+        # After moving, stop, so the other robots can move
+        stop_twist = Twist()
+        self._cmd_vel_pub[namespace].publish(stop_twist)
+        self.wait_until_twist_achieved(stop_twist,
+                                        epsilon,
+                                        update_rate,
+                                        namespace)
+
     
     def wait_until_twist_achieved(self, cmd_vel_value, epsilon, update_rate, namespace):
         """
@@ -277,7 +286,7 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
             current_odometry = self._check_odom_ready(namespace)
             # IN turtlebot3 the odometry angular readings are inverted, so we have to invert the sign.
             odom_linear_vel = current_odometry.twist.twist.linear.x
-            odom_angular_vel = -1*current_odometry.twist.twist.angular.z
+            odom_angular_vel = current_odometry.twist.twist.angular.z
             
             rospy.loginfo("Linear VEL of {}=".format(namespace) + str(odom_linear_vel) + ", ?RANGE=[" + str(linear_speed_minus) + ","+str(linear_speed_plus)+"]")
             rospy.loginfo("Angular VEL of {}=".format(namespace) + str(odom_angular_vel) + ", ?RANGE=[" + str(angular_speed_minus) + ","+str(angular_speed_plus)+"]")

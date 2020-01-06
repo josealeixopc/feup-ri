@@ -143,7 +143,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         
         for ns in self.robot_namespaces:
             current_robot_action = robot_actions[ns]
-            rospy.loginfo("Start Set Action for Robot {} ==>".format(ns) + str(action))
+            rospy.loginfo("Start Set Action for Robot {} ==> ".format(ns) + str(current_robot_action))
             # We convert the actions to speed movements to send to the parent class CubeSingleDiskEnv
             if current_robot_action == 0: #FORWARD
                 linear_speed = self.linear_forward_speed
@@ -161,7 +161,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
             # We tell TurtleBot3 the linear and angular speed to set to execute
             self.move_base(linear_speed, angular_speed, ns, epsilon=0.05, update_rate=10)
             
-            rospy.loginfo("END Set Action for Robot ==>".format(ns)+str(action))
+            rospy.loginfo("END Set Action for Robot {} ==>".format(ns)+str(action))
 
     def _get_obs(self):
         """
