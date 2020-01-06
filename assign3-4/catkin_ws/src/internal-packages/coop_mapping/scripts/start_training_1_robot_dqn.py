@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import errno
 import os
 from datetime import datetime
 import gym
@@ -111,6 +112,8 @@ if __name__ == '__main__':
     create_dir(file_name)
 
     dqn.save_weights(file_name, overwrite=True)
+
+    env.close()
 
     # Finally, evaluate our algorithm for 5 episodes.
     # dqn.test(env, nb_episodes=5, visualize=False)

@@ -23,7 +23,7 @@ from rl.policy import BoltzmannQPolicy
 from rl.memory import SequentialMemory
 
 VS_ROS_DEBUG = 1
-ENV_NAME = 'TurtleBot3WorldMapping-v0'
+ENV_NAME = 'TurtleBot3WorldMapping2Robots-v0'
 
 def create_dir(path):
     try:
