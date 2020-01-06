@@ -18,29 +18,30 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
 
     def __init__(self, ros_ws_abspath, ros_launch_file_package="turtlebot3_gazebo", ros_launch_file_name="put_robot_in_world.launch"):
         """
-        Initializes a new TurtleBot3Env environment.
-        TurtleBot3 doesnt use controller_manager, therefore we wont reset the 
-        controllers in the standard fashion. For the moment we wont reset them.
+        This is my own custom environment for two TB3 robots, based on the original OpenAI ROS environments.
+
+        In this environment, the observation will be the union of the observations between both robots. 
         
-        To check any topic we need to have the simulations running, we need to do two things:
-        1) Unpause the simulation: without that th stream of data doesnt flow. This is for simulations
-        that are pause for whatever the reason
-        2) If the simulation was running already for some reason, we need to reset the controlers.
-        This has to do with the fact that some plugins with tf, dont understand the reset of the simulation
-        and need to be reseted to work properly.
-        
-        The Sensors: The sensors accesible are the ones considered usefull for AI learning.
-        
-        Sensor Topic List:
-        * /odom : Odometry readings of the Base of the Robot
-        * /imu: Inertial Mesuring Unit that gives relative accelerations and orientations.
-        * /scan: Laser Readings
-        
-        Actuators Topic List: /cmd_vel, 
-        
-        Args:
+        If one of them crashes, the episode ends.
+
+        The namespace for each robot is "tb3_0" and "tb3_1", which come from the "spawn_2_robots.launch" from "coop_mapping".
+        The namespaces are sometimes hardcoded in the functions, so take care when changing things.
         """
-        rospy.logdebug("Start TurtleBot3Env INIT...")
+        rospy.logdebug("Start TurtleBot3TwoRobotsEnv INIT...")
+    
+        # Init namespace
+        ROBOT_1_NAMESPACE = '/tb3_0'
+        ROBOT_2_NAMESPACE = '/tb3_1'
+        self.robot_namespaces = [ROBOT_1_NAMESPACE, ROBOT_2_NAMESPACE]
+
+        # Init dictonaries for sensors
+        self.odom = {}
+        self.imu = {}
+        self.laser_scan = {}
+
+        # Init dictionaries for publishers
+        self._cmd_vel_pub = {}
+
         # Variables that we give through the constructor.
         # None in this case
 
@@ -64,23 +65,27 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
 
 
 
-
         self.gazebo.unpauseSim()
         #self.controllers_object.reset_controllers()
         self._check_all_sensors_ready()
 
-        # We Start all the ROS related Subscribers and publishers
-        rospy.Subscriber("/odom", Odometry, self._odom_callback)
-        rospy.Subscriber("/imu", Imu, self._imu_callback)
-        rospy.Subscriber("/scan", LaserScan, self._laser_scan_callback)
+        # We Start all the ROS related Subscribers and publishers.
+        # This is hardcoded because I can't mess with callback arguments
+        rospy.Subscriber("/tb3_0/odom", Odometry, self._odom_callback_tb3_0)
+        rospy.Subscriber("/tb3_0/imu", Imu, self._imu_callback_tb3_0)
+        rospy.Subscriber("/tb3_0/scan", LaserScan, self._laser_scan_callback_tb3_0)
 
-        self._cmd_vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
+        rospy.Subscriber("/tb3_1/odom", Odometry, self._odom_callback_tb3_1)
+        rospy.Subscriber("/tb3_1/imu", Imu, self._imu_callback_tb3_1)
+        rospy.Subscriber("/tb3_1/scan", LaserScan, self._laser_scan_callback_tb3_1)
 
-        self._check_publishers_connection()
+        for ns in self.robot_namespaces:
+            self._cmd_vel_pub[ns] = rospy.Publisher(ns + '/cmd_vel', Twist, queue_size=1)
+            self._check_publishers_connection(ns)
 
         self.gazebo.pauseSim()
         
-        rospy.logdebug("Finished TurtleBot3Env INIT...")
+        rospy.logdebug("Finished TurtleBot3TwoRobotsEnv INIT...")
 
     # Methods needed by the RobotGazeboEnv
     # ----------------------------
@@ -100,76 +105,88 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
 
     def _check_all_sensors_ready(self):
         rospy.logdebug("START ALL SENSORS READY")
-        self._check_odom_ready()
-        self._check_imu_ready()
-        self._check_laser_scan_ready()
+        for ns in self.robot_namespaces:
+            self._check_odom_ready(ns)
+            self._check_imu_ready(ns)
+            self._check_laser_scan_ready(ns)
         rospy.logdebug("ALL SENSORS READY")
 
-    def _check_odom_ready(self):
-        self.odom = None
-        rospy.logdebug("Waiting for /odom to be READY...")
-        while self.odom is None and not rospy.is_shutdown():
+
+    def _check_odom_ready(self, namespace):
+        self.odom[namespace] = None
+        rospy.logdebug("Waiting for {}/odom to be READY...".format(namespace))
+        while self.odom[namespace] is None and not rospy.is_shutdown():
             try:
-                self.odom = rospy.wait_for_message("/odom", Odometry, timeout=5.0)
-                rospy.logdebug("Current /odom READY=>")
+                self.odom[namespace] = rospy.wait_for_message(namespace + "/odom", Odometry, timeout=5.0)
+                rospy.logdebug("Current {}/odom READY=>".format(namespace))
 
             except:
-                rospy.logerr("Current /odom not ready yet, retrying for getting odom")
+                rospy.logerr("Current {}/odom not ready yet, retrying for getting odom".format(namespace))
 
-        return self.odom
+        return self.odom[namespace]
         
         
-    def _check_imu_ready(self):
-        self.imu = None
-        rospy.logdebug("Waiting for /imu to be READY...")
-        while self.imu is None and not rospy.is_shutdown():
+    def _check_imu_ready(self, namespace):
+        self.imu[namespace] = None
+        rospy.logdebug("Waiting for {}/imu to be READY...".format(namespace))
+        while self.imu[namespace] is None and not rospy.is_shutdown():
             try:
-                self.imu = rospy.wait_for_message("/imu", Imu, timeout=5.0)
-                rospy.logdebug("Current /imu READY=>")
+                self.imu[namespace] = rospy.wait_for_message(namespace + "/imu", Imu, timeout=5.0)
+                rospy.logdebug("Current {}/imu READY=>".format(namespace))
 
             except:
-                rospy.logerr("Current /imu not ready yet, retrying for getting imu")
+                rospy.logerr("Current {}/imu not ready yet, retrying for getting imu".format(namespace))
 
-        return self.imu
+        return self.imu[namespace]
 
 
-    def _check_laser_scan_ready(self):
-        self.laser_scan = None
-        rospy.logdebug("Waiting for /scan to be READY...")
-        while self.laser_scan is None and not rospy.is_shutdown():
+    def _check_laser_scan_ready(self, namespace):
+        self.laser_scan[namespace] = None
+        rospy.logdebug("Waiting for {}/scan to be READY...".format(namespace))
+        while self.laser_scan[namespace] is None and not rospy.is_shutdown():
             try:
-                self.laser_scan = rospy.wait_for_message("/scan", LaserScan, timeout=1.0)
-                rospy.logdebug("Current /scan READY=>")
+                self.laser_scan[namespace] = rospy.wait_for_message(namespace + "/scan", LaserScan, timeout=1.0)
+                rospy.logdebug("Current {}/scan READY=>".format(namespace))
 
             except:
-                rospy.logerr("Current /scan not ready yet, retrying for getting laser_scan")
-        return self.laser_scan
+                rospy.logerr("Current {}/scan not ready yet, retrying for getting laser_scan".format(namespace))
+        return self.laser_scan[namespace]
         
-
-    def _odom_callback(self, data):
-        self.odom = data
+    # TB3_0
+    def _odom_callback_tb3_0(self, data):
+        self.odom['/tb3_0'] = data
     
-    def _imu_callback(self, data):
-        self.imu = data
+    def _imu_callback_tb3_0(self, data):
+        self.imu['tb3_0'] = data
 
-    def _laser_scan_callback(self, data):
-        self.laser_scan = data
+    def _laser_scan_callback_tb3_0(self, data):
+        self.laser_scan["tb3_0"] = data
+
+    # TB3_1
+    def _odom_callback_tb3_1(self, data):
+        self.odom["tb3_1"] = data
+    
+    def _imu_callback_tb3_1(self, data):
+        self.imu["tb3_1"] = data
+
+    def _laser_scan_callback_tb3_1(self, data):
+        self.laser_scan["tb3_1"] = data
 
         
-    def _check_publishers_connection(self):
+    def _check_publishers_connection(self, namespace):
         """
         Checks that all the publishers are working
         :return:
         """
         rate = rospy.Rate(10)  # 10hz
-        while self._cmd_vel_pub.get_num_connections() == 0 and not rospy.is_shutdown():
+        while self._cmd_vel_pub[namespace].get_num_connections() == 0 and not rospy.is_shutdown():
             rospy.logdebug("No susbribers to _cmd_vel_pub yet so we wait and try again")
             try:
                 rate.sleep()
             except rospy.ROSInterruptException:
                 # This is to avoid error when world is rested, time when backwards.
                 pass
-        rospy.logdebug("_cmd_vel_pub Publisher Connected")
+        rospy.logdebug("_cmd_vel_pub Publisher of {} Connected".format(namespace))
 
         rospy.logdebug("All Publishers READY")
     
@@ -208,7 +225,7 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
         
     # Methods that the TrainingEnvironment will need.
     # ----------------------------
-    def move_base(self, linear_speed, angular_speed, epsilon=0.05, update_rate=10):
+    def move_base(self, linear_speed, angular_speed, namespace, epsilon=0.05, update_rate=10):
         """
         It will move the base based on the linear and angular speeds given.
         It will wait untill those twists are achived reading from the odometry topic.
@@ -222,13 +239,14 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
         cmd_vel_value.linear.x = linear_speed
         cmd_vel_value.angular.z = angular_speed
         rospy.logdebug("TurtleBot3 Base Twist Cmd>>" + str(cmd_vel_value))
-        self._check_publishers_connection()
-        self._cmd_vel_pub.publish(cmd_vel_value)
+        self._check_publishers_connection(namespace)
+        self._cmd_vel_pub[namespace].publish(cmd_vel_value)
         self.wait_until_twist_achieved(cmd_vel_value,
                                         epsilon,
-                                        update_rate)
+                                        update_rate,
+                                        namespace)
     
-    def wait_until_twist_achieved(self, cmd_vel_value, epsilon, update_rate):
+    def wait_until_twist_achieved(self, cmd_vel_value, epsilon, update_rate, namespace):
         """
         We wait for the cmd_vel twist given to be reached by the robot reading
         from the odometry.
@@ -256,7 +274,7 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
         angular_speed_minus = angular_speed - epsilon
         
         while not rospy.is_shutdown():
-            current_odometry = self._check_odom_ready()
+            current_odometry = self._check_odom_ready(namespace)
             # IN turtlebot3 the odometry angular readings are inverted, so we have to invert the sign.
             odom_linear_vel = current_odometry.twist.twist.linear.x
             odom_angular_vel = -1*current_odometry.twist.twist.angular.z
@@ -281,11 +299,11 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
         return delta_time
         
 
-    def get_odom(self):
-        return self.odom
+    def get_odom(self, namespace):
+        return self.odom[namespace]
         
-    def get_imu(self):
-        return self.imu
+    def get_imu(self, namespace):
+        return self.imu[namespace]
         
-    def get_laser_scan(self):
-        return self.laser_scan
+    def get_laser_scan(self, namespace):
+        return self.laser_scan[namespace]
