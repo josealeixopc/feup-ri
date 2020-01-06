@@ -66,8 +66,6 @@
         <arg name="set_map_frame" value="$(arg second_tb3)/map"/>
     </include> 
     
-
-
     <!-- Launch multi_map_merge. -->
     <include file="$(find coop_mapping)/launch/2_robots_multi_map_merge.launch">
         <arg name="first_tb3"  value="$(arg first_tb3)"/>

@@ -2,6 +2,7 @@
 
 ## TODO
 
+- Use this to move a bit forward / rotate without move_base: https://wiki.ros.org/pr2_controllers/Tutorials/Using%20the%20base%20controller%20with%20odometry%20and%20transform%20information.
 - Check [this](https://answers.ros.org/question/205521/robot-coordinates-in-map/) and [this](https://answers.ros.org/question/159171/how-to-get-robot-position-xy-in-a-map/) to try to get map into observation.
 - Try to get area of map into reward function (maybe outer bounds of map relative to the robot position).
 - Try to implement baselines from here https://github.com/lilianweng/deep-reinforcement-learning-gym. Using Python 2.7 does not let you install Stable-baselins.
