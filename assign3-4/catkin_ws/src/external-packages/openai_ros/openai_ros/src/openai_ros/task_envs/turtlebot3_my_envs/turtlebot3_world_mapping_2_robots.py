@@ -1,7 +1,7 @@
 import rospy
 import numpy
 from gym import spaces
-import turtlebot3_env
+import turtlebot3_two_robots_env
 from gym.envs.registration import register
 from geometry_msgs.msg import Vector3
 from openai_ros.task_envs.task_commons import LoadYamlFileParamsTest
@@ -12,7 +12,7 @@ from geometry_msgs.msg import Twist
 
 from utils.pseudo_collision_detector import PseudoCollisionDetector
 
-class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_env.TurtleBot3Env):
+class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRobotsEnv):
     def __init__(self):
         """
         This Task Env is designed for having the TurtleBot3 in the turtlebot3 world
@@ -46,13 +46,16 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_env.TurtleBot3Env):
 
 
         # Here we will add any init functions prior to starting the MyRobotEnv
-        super(TurtleBot3WorldMappingEnv, self).__init__(ros_ws_abspath, 
-                                                        ros_launch_file_package="turtlebot3_gazebo", 
-                                                        ros_launch_file_name="put_robot_in_world.launch")
+        super(TurtleBot3WorldMapping2RobotsEnv, self).__init__(ros_ws_abspath, 
+                                                        ros_launch_file_package="coop_mapping", 
+                                                        ros_launch_file_name="spawn_2_robots.launch")
 
         # Only variable needed to be set here
         number_actions = rospy.get_param('/turtlebot3/n_actions')
-        self.action_space = spaces.Discrete(number_actions)
+        number_robots = 2
+
+        # 3x3 possible actions (a % 3 -> robot 1 action, a / 3 -> robot 2 action)
+        self.action_space = spaces.Discrete(pow(number_actions,number_robots)) 
         
         # We set the reward range, which is not compulsory but here we do it.
         self.reward_range = (-numpy.inf, numpy.inf)
