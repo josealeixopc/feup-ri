@@ -5,6 +5,8 @@ import subprocess, threading
 import image_similarity
 
 import numpy as np
+import roslaunch
+import rospy
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 images_relative_dir = "image_examples"
@@ -106,21 +108,22 @@ def fill(data, start_coords, fill_value, border_value, connectivity=8):
     
     return filled_data, borders
 
-def compare_current_map_to_actual_map(actual_map_file):
+def compare_current_map_to_actual_map(current_map_file_location, actual_map_file):
     """
     Runs the map_server command to save the current image of the map runs comparison between the current
     robot's image and the actual map.
 
     Returns a float which represents the difference between the maps. A LOWER VALUE means the images are MORE SIMILAR.
     """
-    current_map_file_location = "/tmp/current_tb3_map"
 
+    actual_map_file_location = images_abs_dir + os.path.sep + actual_map_file
 
-    command=Command("rosrun map_server map_saver -f {}".format(current_map_file_location))
-    # command.run(timeout=10)
+    # If map_saver could not save a map, return maximum difference
+    if not os.path.exists(current_map_file_location + ".pgm"):
+        return 1
 
     current_map_image = cv2.imread(current_map_file_location + ".pgm", cv2.IMREAD_GRAYSCALE)
-    actual_map_image = cv2.imread(actual_map_file, cv2.IMREAD_GRAYSCALE)
+    actual_map_image = cv2.imread(actual_map_file_location, cv2.IMREAD_GRAYSCALE)
 
     # Rotate 90 degrees to the left by rotating 3 times to the right
     current_map_image = np.rot90(current_map_image, k=3)
@@ -155,14 +158,10 @@ def compare_current_map_to_actual_map(actual_map_file):
     x, y, w, h = cv2.boundingRect(walkable_map_edges)
     walkable_map_edges = walkable_map_edges[y:y+h, x:x+w]
 
-    # cv2.imshow("Walkable map", walkable_map)
-    # cv2.imshow("Current Map", current_map_image)
-    # cv2.imshow("Walkable Map Edges", walkable_map_edges)
-    # cv2.imshow("Current Map Edges", current_map_edges)
-    # cv2.waitKey(0)
-
-    image_diff = image_similarity.my_compare_images(walkable_map_edges, current_map_edges)
+    # compare_images returns a value between 0 and 1, but may return 1000, so we choose the min of the two
+    image_diff = min(1, image_similarity.my_compare_images(walkable_map_edges, current_map_edges)) 
     return image_diff
 
 if __name__ == "__main__":
-    compare_current_map_to_actual_map(images_abs_dir + os.path.sep + "turtlebot3_house_map.pgm")
+    current_map_file_location = "/tmp/ros_merge_map"
+    print("Image difference: {}".format(compare_current_map_to_actual_map(current_map_file_location, "turtlebot3_world_map.pgm")))

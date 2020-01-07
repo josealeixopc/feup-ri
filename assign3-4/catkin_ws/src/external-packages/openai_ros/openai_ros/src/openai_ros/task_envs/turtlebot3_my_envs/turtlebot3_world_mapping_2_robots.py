@@ -11,8 +11,10 @@ from openai_ros.openai_ros_common import ROSLauncher
 import os
 
 from geometry_msgs.msg import Twist
+from nav_msgs.msg import OccupancyGrid
 
 from utils.pseudo_collision_detector import PseudoCollisionDetector
+from utils.image_similarity_ros import compare_current_map_to_actual_map
 
 class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRobotsEnv):
     def __init__(self):
@@ -100,6 +102,10 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         self.turn_reward = rospy.get_param("/turtlebot3/turn_reward")
         self.end_episode_points = rospy.get_param("/turtlebot3/end_episode_points")
 
+        self.no_crash_reward_points = rospy.get_param("/turtlebot3/no_crash_reward_points")
+        self.crash_reward_points = rospy.get_param("/turtlebot3/crash_reward_points")
+        self.exploration_multi_factor = rospy.get_param("/turtlebot3/exploration_multi_factor")
+
         self.cumulated_steps = 0.0
 
         # Init dictionary for both robots actions
@@ -117,6 +123,15 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         self._map_merge_launch_file = pkg_path + os.path.sep + 'launch' + os.path.sep + '2_robots_multi_map_merge.launch'
         self._map_merge_running = False
         self._map_merge_launch = None
+
+        # Variables for map comparison
+        self.actual_map_file = "turtlebot3_world_map.pgm"
+        self.current_min_map_difference = 1 # The minimum difference that has been observed
+
+        # Start subscriber to /map to save it to file
+        self._map_file_name = "/tmp/ros_merge_map"
+        rospy.Subscriber('map', OccupancyGrid, self._map_callback)
+
 
     def _set_init_pose(self):
         """Sets the Robots in its init pose
@@ -150,6 +165,10 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         self._stop_map_merge()
         self._start_map_merge()
 
+        # Set initial map difference
+        # rospy.logwarn("Running initial map comparison.")
+        # self.current_min_map_difference = compare_current_map_to_actual_map(self.actual_map_file)
+        # rospy.logwarn("Initial map difference: {}".format(self.current_min_map_difference))
 
     def _set_action(self, action):
         """
@@ -214,16 +233,26 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
 
     def _compute_reward(self, observations, done):
         """
-        The current reward depends only on the first robot! TODO: CHANGE THIS!
+        The current reward depends only on the first robot!
         """
+        rospy.logwarn("Running map comparison...")
+        new_map_difference = compare_current_map_to_actual_map(self._map_file_name, self.actual_map_file)
+        new_min_map_difference = min(new_map_difference, self.current_min_map_difference)
+
+        # If the new difference is big, it's possibly a bug
+        if new_min_map_difference > 0.5:
+            exploration_reward = 0
+        else:
+            exploration_reward = self.current_min_map_difference - new_min_map_difference
+
+        rospy.logwarn("Old map dif - new map dif: {}-{} = {}".format(self.current_min_map_difference, new_min_map_difference, exploration_reward))
 
         if not done:
-            if self.last_action[self.robot_namespaces[0]] == "FORWARDS":
-                reward = self.forwards_reward
-            else:
-                reward = self.turn_reward
+            reward = self.no_crash_reward_points + exploration_reward * self.exploration_multi_factor
         else:
-            reward = -1*self.end_episode_points
+            reward = self.crash_reward_points
+
+        self.current_min_map_difference = new_min_map_difference
 
         rospy.loginfo("reward=" + str(reward))
         self.cumulated_reward += reward
@@ -387,39 +416,63 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
 
     def _start_map_merge(self):
         if not self._map_merge_running:
-            rospy.logwarn("Creating launch parent for MapMerge launch file.")
+            rospy.loginfo("Creating launch parent for MapMerge launch file.")
             uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
             roslaunch.configure_logging(uuid)
 
             self._map_merge_launch = roslaunch.parent.ROSLaunchParent(uuid, [self._map_merge_launch_file])
 
             self._map_merge_launch.start()
-            rospy.logwarn("Started MapMerge launch file.")
+            rospy.loginfo("Started MapMerge launch file.")
 
             self._map_merge_running = True
     
     def _start_gmapping(self):
         if not self._gmapping_running:
-            rospy.logwarn("Creating launch parent for Gmapping launch file.")
+            rospy.loginfo("Creating launch parent for Gmapping launch file.")
             uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
             roslaunch.configure_logging(uuid)
             self._gmapping_launch = roslaunch.parent.ROSLaunchParent(uuid, [self._gmapping_launch_file])
 
             self._gmapping_launch.start()
-            rospy.logwarn("Started Gmapping launch file.")
+            rospy.loginfo("Started Gmapping launch file.")
 
             self._gmapping_running = True
 
     def _stop_map_merge(self):
         if self._map_merge_running:
             self._map_merge_launch.shutdown()
-            rospy.logwarn("Stopped MapMerge launch file.")
+            rospy.loginfo("Stopped MapMerge launch file.")
 
             self._map_merge_running = False
     
     def _stop_gmapping(self):
         if self._gmapping_running:
             self._gmapping_launch.shutdown()
-            rospy.logwarn("Stopped Gmapping launch file.")
+            rospy.loginfo("Stopped Gmapping launch file.")
 
             self._gmapping_running = False
+
+    def _map_callback(self, map_data):
+        # Based on this: https://github.com/ros-planning/navigation/blob/melodic-devel/map_server/src/map_saver.cpp
+
+        threshold_occupied = 65
+        threshold_free = 25
+        f = open(self._map_file_name + ".pgm", "w")
+
+        f.write("P5\n# CREATOR: my_map_saver.py {} m/pix\n{} {}\n255\n".format(map_data.info.resolution, 
+                                                                                map_data.info.width,
+                                                                                map_data.info.height))
+
+        for y in range(map_data.info.height):
+            for x in range(map_data.info.width):
+                i = x + (map_data.info.height - y - 1) * map_data.info.width
+
+                if map_data.data[i] >= 0 and map_data.data[i] <= threshold_free:
+                    f.write(chr(254))
+                elif map_data.data[i] >= threshold_occupied:
+                    f.write(chr(0))
+                else:
+                    f.write(chr(205))
+
+        f.close()
