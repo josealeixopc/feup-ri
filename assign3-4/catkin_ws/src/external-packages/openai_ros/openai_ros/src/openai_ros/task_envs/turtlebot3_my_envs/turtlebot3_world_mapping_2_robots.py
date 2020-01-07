@@ -239,13 +239,13 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         new_map_difference = compare_current_map_to_actual_map(self._map_file_name, self.actual_map_file)
         new_min_map_difference = min(new_map_difference, self.current_min_map_difference)
 
-        # If the new difference is big, it's possibly a bug
-        if new_min_map_difference > 0.5:
-            exploration_reward = 0
-        else:
-            exploration_reward = self.current_min_map_difference - new_min_map_difference
+        exploration_reward = self.current_min_map_difference - new_min_map_difference
 
-        rospy.logwarn("Old map dif - new map dif: {}-{} = {}".format(self.current_min_map_difference, new_min_map_difference, exploration_reward))
+        # If the new difference is big, it's possibly a bug
+        if exploration_reward > 0.5:
+            exploration_reward = 0
+
+        rospy.logwarn("Old map dif - new map dif: {}-{} = {}".format(self.current_min_map_difference, new_min_map_difference, self.current_min_map_difference - new_min_map_difference))
 
         if not done:
             reward = self.no_crash_reward_points + exploration_reward * self.exploration_multi_factor

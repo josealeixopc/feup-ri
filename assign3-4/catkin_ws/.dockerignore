@@ -1,4 +1,6 @@
 
+trainings/
+
 Dockerfile
 .dockerignore
 venv/

@@ -19,7 +19,7 @@ from openai_ros.openai_ros_common import StartOpenAI_ROS_Environment
 import dqn
 import numpy as np
 
-VS_ROS_DEBUG = 1
+VS_ROS_DEBUG = 0
 ENV_NAME = 'TurtleBot3WorldMapping2Robots-v0'
 EPISODES = 20
 MAX_EPISODE_STEPS = 1000
@@ -73,10 +73,10 @@ def train(environment):
     rospack = rospkg.RosPack()
     pkg_path = rospack.get_path('coop_mapping')
 
-    results_dir = pkg_path + os.path.sep + 'training_results' + os.path.sep + "{}-dqn".format(current_time)
+    results_dir = os.environ['ROS_WS']+ os.path.sep + 'trainings' + os.path.sep + 'results' + os.path.sep + "{}-dqn".format(current_time)
     create_dir(results_dir)
 
-    training_weights_file = pkg_path + os.path.sep + "training_weights" + os.path.sep + "{}-dqn_{}_weights.h5f".format(current_time, environment)
+    training_weights_file = os.environ['ROS_WS'] + os.path.sep + 'trainings' + os.path.sep + 'weights' + os.path.sep + "{}-dqn_{}_weights.h5f".format(current_time, environment)
     create_dir(training_weights_file)
 
     env = wrappers.Monitor(env, results_dir, force=True)

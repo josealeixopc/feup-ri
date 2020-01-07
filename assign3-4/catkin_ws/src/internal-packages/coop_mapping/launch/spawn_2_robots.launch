@@ -73,6 +73,8 @@
     </include> -->
 
     <!-- Launch RViz -->
-    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find coop_mapping)/rviz/2_robots.rviz"/>
+    <group if="$(eval env('ENV') != 'deploy')">
+        <node type="rviz" name="rviz" pkg="rviz" args="-d $(find coop_mapping)/rviz/2_robots.rviz"/>
+    </group>
 
 </launch>
