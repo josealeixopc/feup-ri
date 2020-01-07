@@ -42,7 +42,7 @@
 
     <!-- Launch GMapping for each robot. -->
     
-    <include file="$(find coop_mapping)/launch/my_turtlebot3_gmapping.launch" ns="$(arg first_tb3)">
+    <!-- <include file="$(find coop_mapping)/launch/my_turtlebot3_gmapping.launch" ns="$(arg first_tb3)">
         <arg name="model" value="$(arg model)"/>
         <arg name="set_base_frame" value="$(arg first_tb3)/base_footprint"/>
         <arg name="set_odom_frame" value="$(arg first_tb3)/odom"/>
@@ -54,11 +54,11 @@
         <arg name="set_base_frame" value="$(arg second_tb3)/base_footprint"/>
         <arg name="set_odom_frame" value="$(arg second_tb3)/odom"/>
         <arg name="set_map_frame" value="$(arg second_tb3)/map"/>
-    </include> 
+    </include>  -->
 
 
     <!-- Launch multi_map_merge. -->
-    <include file="$(find coop_mapping)/launch/2_robots_multi_map_merge.launch">
+    <!-- <include file="$(find coop_mapping)/launch/2_robots_multi_map_merge.launch">
         <arg name="first_tb3"  value="$(arg first_tb3)"/>
         <arg name="first_tb3_x_pos" value="$(arg first_tb3_x_pos)"/>
         <arg name="first_tb3_y_pos" value="$(arg first_tb3_y_pos)"/>
@@ -70,7 +70,7 @@
         <arg name="second_tb3_y_pos" value="$(arg second_tb3_y_pos)"/>
         <arg name="second_tb3_z_pos" value="$(arg second_tb3_z_pos)"/>
         <arg name="second_tb3_yaw"   value="$(arg second_tb3_yaw)"/>
-    </include>
+    </include> -->
 
     <!-- Launch RViz -->
     <node type="rviz" name="rviz" pkg="rviz" args="-d $(find coop_mapping)/rviz/2_robots.rviz"/>

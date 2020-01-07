@@ -186,18 +186,8 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         if self._episode_done:
             rospy.logerr("A TurtleBot3 is Too Close to wall==>")
         else:
-            rospy.logwarn("No TurtleBot3 is close to a wall ==>")
+            rospy.loginfo("No TurtleBot3 is close to a wall ==>")
             
-        # Now we check if it has crashed based on the imu
-        for ns in self.robot_namespaces:
-            imu_data = self.get_imu(ns)
-            linear_acceleration_magnitude = self.get_vector_magnitude(imu_data.linear_acceleration)
-            if linear_acceleration_magnitude > self.max_linear_aceleration:
-                rospy.logerr("TurtleBot3 {} Crashed==>".format(ns)+str(linear_acceleration_magnitude)+">"+str(self.max_linear_aceleration))
-                self._episode_done = True
-            else:
-                rospy.logerr("DIDNT crash TurtleBot3 {} ==>".format(ns)+str(linear_acceleration_magnitude)+">"+str(self.max_linear_aceleration))
-        
         return self._episode_done
 
     def _compute_reward(self, observations, done):
@@ -213,7 +203,6 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         else:
             reward = -1*self.end_episode_points
 
-
         rospy.loginfo("reward=" + str(reward))
         self.cumulated_reward += reward
         rospy.loginfo("Cumulated_reward=" + str(self.cumulated_reward))
@@ -228,9 +217,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         """
         Discards all the laser readings that are not multiple in index of new_ranges
         value.
-        """
-        self._episode_done = False
-        
+        """        
         discretized_ranges = []
         mod = len(data.ranges)/new_ranges
         
@@ -247,11 +234,11 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
                 else:
                     discretized_ranges.append(int(item))
                     
-                if (self.min_range > item > 0):
-                    rospy.logerr("done Validation >>> item=" + str(item)+"< "+str(self.min_range))
-                    self._episode_done = True
-                else:
-                    rospy.loginfo("NOT done Validation >>> item=" + str(item)+"< "+str(self.min_range))
+            if (self.min_range > item > 0):
+                rospy.logerr("done Validation >>> item=" + str(item)+"< "+str(self.min_range))
+                self._episode_done = True
+            else:
+                rospy.loginfo("NOT done Validation >>> item=" + str(item)+"< "+str(self.min_range))
                     
 
         return discretized_ranges
@@ -277,7 +264,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
 
         collision_detector = PseudoCollisionDetector()
         
-        collision_detected = collision_detector.collision_detected(laser_scan_message, 0.05)
+        collision_detected = collision_detector.collision_detected(laser_scan_message, self.min_range)
 
         if collision_detected:
             return True
@@ -363,7 +350,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
                 break
             
             if self.check_if_crashed(namespace):
-                rospy.logwarn("{} has crashed while trying to achieve Twist.".format(namespace))
+                rospy.logerr("{} has crashed while trying to achieve Twist.".format(namespace))
                 self._episode_done = True
                 break
 

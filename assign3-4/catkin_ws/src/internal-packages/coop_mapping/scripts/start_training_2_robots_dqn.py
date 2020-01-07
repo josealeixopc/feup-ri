@@ -1,13 +1,6 @@
 #!/usr/bin/env python
 
-import start_training_1_robot_dqn
-
-VS_ROS_DEBUG = 1
-ENV_NAME = 'TurtleBot3WorldMapping2Robots-v0'
-
-if __name__ == '__main__':
-    start_training_1_robot_dqn.train(ENV_NAME)#!/usr/bin/env python
-
+import sys
 import errno
 import os
 from datetime import datetime
@@ -22,17 +15,13 @@ import rospy
 import rospkg
 from openai_ros.openai_ros_common import StartOpenAI_ROS_Environment
 
-# Keras
-from keras.models import Sequential
-from keras.layers import Dense, Activation, Flatten
-from keras.optimizers import Adam
-
-from rl.agents.dqn import DQNAgent
-from rl.policy import BoltzmannQPolicy
-from rl.memory import SequentialMemory
+# DQN
+import dqn
+import numpy as np
 
 VS_ROS_DEBUG = 1
 ENV_NAME = 'TurtleBot3WorldMapping2Robots-v0'
+EPISODES = 1000
 
 def create_dir(path):
     try:
@@ -46,7 +35,8 @@ def train(environment):
     """
 
     if VS_ROS_DEBUG:
-        raw_input('Waiting for VS ROS debugger to be attached... Press a key and ENTER once it has been attached: ')
+        sys.stderr.write("Waiting for VS ROS debugger to be attached... Press a key and ENTER once it has been attached: ")
+        raw_input()
 
     ### Export ENV variables BEGIN
     
@@ -62,7 +52,7 @@ def train(environment):
     
     ### Export ENV variables END
 
-    rospy.init_node('turtlebot3_world_mapping_dqn', anonymous=True, log_level=rospy.DEBUG)
+    rospy.init_node('turtlebot3_world_mapping_dqn', anonymous=True, log_level=rospy.WARN)
 
     # Init OpenAI_ROS ENV
     task_and_robot_environment_name = environment
@@ -81,48 +71,49 @@ def train(environment):
     # Set the logging system
     rospack = rospkg.RosPack()
     pkg_path = rospack.get_path('coop_mapping')
-    outdir = pkg_path + os.path.sep + 'training_results' + \
-        os.path.sep + "{}-dqn".format(current_time)
-    create_dir(outdir)
-    env = wrappers.Monitor(env, outdir, force=True)
+
+    results_dir = pkg_path + os.path.sep + 'training_results' + os.path.sep + "{}-dqn".format(current_time)
+    create_dir(results_dir)
+
+    training_weights_file = pkg_path + os.path.sep + "training_weights" + os.path.sep + "{}-dqn_{}_weights.h5f".format(current_time, environment)
+    create_dir(training_weights_file)
+
+    env = wrappers.Monitor(env, results_dir, force=True)
     rospy.loginfo("Monitor Wrapper started")
 
     # Next, we build a very simple model.
-    nb_actions = env.action_space.n
+    state_size = env.observation_space.shape[0]
+    action_size = env.action_space.n
+    agent = dqn.DQNAgent(state_size, action_size)
+    # agent.load("./save/cartpole-dqn.h5")
+    done = False
+    batch_size = 32
 
-    model = Sequential()
-    model.add(Flatten(input_shape=(1,) + env.observation_space.shape))
-    model.add(Dense(16))
-    model.add(Activation('relu'))
-    model.add(Dense(16))
-    model.add(Activation('relu'))
-    model.add(Dense(16))
-    model.add(Activation('relu'))
-    model.add(Dense(nb_actions))
-    model.add(Activation('linear'))
-    print(model.summary())
+    for e in range(EPISODES):
+        state = env.reset()
+        state = np.reshape(state, [1, state_size])
+        rospy.logwarn("Initial state ==> {}".format(state))
+        for time in range(500):
+            # env.render()
+            action = agent.act(state)
+            next_state, reward, done, _ = env.step(action)
+            rospy.logwarn("Action taken ==> {}".format(action))
 
-    # Finally, we configure and compile our agent. You can use every built-in Keras optimizer and
-    # even the metrics!
-    memory = SequentialMemory(limit=50000, window_length=1)
-    policy = BoltzmannQPolicy()
-    dqn = DQNAgent(model=model, nb_actions=nb_actions, memory=memory, nb_steps_warmup=10,
-                target_model_update=1e-2, policy=policy)
-    dqn.compile(Adam(lr=1e-3), metrics=['mae'])
+            next_state = np.reshape(next_state, [1, state_size])
+            agent.memorize(state, action, reward, next_state, done)
+            state = next_state
+            rospy.logwarn("After taking action (s, r, d) ==> {}; {}; {}".format(state, reward, done))
 
-    # Okay, now it's time to learn something! We visualize the training here for show, but this
-    # slows down training quite a lot. You can always safely abort the training prematurely using
-    # Ctrl + C.
-    dqn.fit(env, nb_steps=10, visualize=False, verbose=2)
+            if done:
+                print("episode: {}/{}, score: {}, e: {:.2}"
+                      .format(e, EPISODES, time, agent.epsilon))
+                break
 
-    # After training is done, we save the final weights.
-    rospack = rospkg.RosPack()
-    pkg_path = rospack.get_path('coop_mapping')
+            if len(agent.memory) > batch_size:
+                agent.replay(batch_size)
 
-    file_name = pkg_path + os.path.sep + "training_weights" + os.path.sep + "{}-dqn_{}_weights.h5f".format(current_time, environment)
-    create_dir(file_name)
-
-    dqn.save_weights(file_name, overwrite=True)
+        if e % 10 == 0:  # save weights every 10 episodes
+            agent.save(training_weights_file)
 
     env.close()
 

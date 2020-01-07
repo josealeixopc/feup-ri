@@ -6,7 +6,6 @@ from sensor_msgs.msg import JointState
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import LaserScan
 from sensor_msgs.msg import PointCloud2
-from sensor_msgs.msg import Imu
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist
 from openai_ros.openai_ros_common import ROSLauncher
@@ -36,7 +35,6 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
 
         # Init dictonaries for sensors
         self.odom = {}
-        self.imu = {}
         self.laser_scan = {}
 
         # Init dictionaries for publishers
@@ -72,11 +70,9 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
         # We Start all the ROS related Subscribers and publishers.
         # This is hardcoded because I can't mess with callback arguments
         rospy.Subscriber("/tb3_0/odom", Odometry, self._odom_callback_tb3_0)
-        rospy.Subscriber("/tb3_0/imu", Imu, self._imu_callback_tb3_0)
         rospy.Subscriber("/tb3_0/scan", LaserScan, self._laser_scan_callback_tb3_0)
 
         rospy.Subscriber("/tb3_1/odom", Odometry, self._odom_callback_tb3_1)
-        rospy.Subscriber("/tb3_1/imu", Imu, self._imu_callback_tb3_1)
         rospy.Subscriber("/tb3_1/scan", LaserScan, self._laser_scan_callback_tb3_1)
 
         for ns in self.robot_namespaces:
@@ -107,7 +103,6 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
         rospy.loginfo("START ALL SENSORS READY")
         for ns in self.robot_namespaces:
             self._check_odom_ready(ns)
-            self._check_imu_ready(ns)
             self._check_laser_scan_ready(ns)
         rospy.loginfo("ALL SENSORS READY")
 
@@ -124,21 +119,6 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
                 rospy.logerr("Current {}/odom not ready yet, retrying for getting odom".format(namespace))
 
         return self.odom[namespace]
-        
-        
-    def _check_imu_ready(self, namespace):
-        self.imu[namespace] = None
-        rospy.loginfo("Waiting for {}/imu to be READY...".format(namespace))
-        while self.imu[namespace] is None and not rospy.is_shutdown():
-            try:
-                self.imu[namespace] = rospy.wait_for_message(namespace + "/imu", Imu, timeout=5.0)
-                rospy.loginfo("Current {}/imu READY=>".format(namespace))
-
-            except:
-                rospy.logerr("Current {}/imu not ready yet, retrying for getting imu".format(namespace))
-
-        return self.imu[namespace]
-
 
     def _check_laser_scan_ready(self, namespace):
         self.laser_scan[namespace] = None
@@ -155,9 +135,6 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
     # TB3_0
     def _odom_callback_tb3_0(self, data):
         self.odom['/tb3_0'] = data
-    
-    def _imu_callback_tb3_0(self, data):
-        self.imu['/tb3_0'] = data
 
     def _laser_scan_callback_tb3_0(self, data):
         self.laser_scan["/tb3_0"] = data
@@ -165,9 +142,6 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
     # TB3_1
     def _odom_callback_tb3_1(self, data):
         self.odom['/tb3_1'] = data
-    
-    def _imu_callback_tb3_1(self, data):
-        self.imu['/tb3_1'] = data
 
     def _laser_scan_callback_tb3_1(self, data):
         self.laser_scan['/tb3_1'] = data
@@ -269,7 +243,6 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
         rate = rospy.Rate(update_rate)
         start_wait_time = rospy.get_rostime().to_sec()
         end_wait_time = 0.0
-        epsilon = 0.05
         
         rospy.loginfo("Desired Twist Cmd>>" + str(cmd_vel_value))
         rospy.loginfo("epsilon>>" + str(epsilon))
@@ -310,9 +283,6 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
 
     def get_odom(self, namespace):
         return self.odom[namespace]
-        
-    def get_imu(self, namespace):
-        return self.imu[namespace]
         
     def get_laser_scan(self, namespace):
         return self.laser_scan[namespace]
