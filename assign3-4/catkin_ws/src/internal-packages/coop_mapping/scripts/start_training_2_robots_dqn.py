@@ -21,7 +21,8 @@ import numpy as np
 
 VS_ROS_DEBUG = 1
 ENV_NAME = 'TurtleBot3WorldMapping2Robots-v0'
-EPISODES = 1000
+EPISODES = 20
+MAX_EPISODE_STEPS = 1000
 
 def create_dir(path):
     try:
@@ -93,7 +94,7 @@ def train(environment):
         state = env.reset()
         state = np.reshape(state, [1, state_size])
         rospy.logwarn("Initial state ==> {}".format(state))
-        for time in range(500):
+        for time in range(MAX_EPISODE_STEPS):
             # env.render()
             action = agent.act(state)
             next_state, reward, done, _ = env.step(action)
