@@ -117,9 +117,6 @@ def train(environment):
             agent.save(training_weights_file)
 
     env.close()
-
-    # Finally, evaluate our algorithm for 5 episodes.
-    # dqn.test(env, nb_episodes=5, visualize=False)
-
+    
 if __name__ == '__main__':
     train(ENV_NAME)

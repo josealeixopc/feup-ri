@@ -1,0 +1,34 @@
+<launch>
+    <!-- If not env variable is set for model, choose burguer. -->
+    <arg name="model" default="$(optenv TURTLEBOT3_MODEL burger)" doc="model type [burger, waffle, waffle_pi]"/>
+    
+    <!-- TURTLEBOT3_0 -->
+    <arg name="first_tb3" default="tb3_0"/>
+    <arg name="first_tb3_x_pos" default="0.5"/>
+    <arg name="first_tb3_y_pos" default="0.0"/>
+    <arg name="first_tb3_z_pos" default=" 0.0"/>
+    <arg name="first_tb3_yaw" default="0.0"/>
+
+    <!-- TURTLEBOT3_1 -->
+    <arg name="second_tb3" default="tb3_1"/>
+    <arg name="second_tb3_x_pos" default="-0.5"/>
+    <arg name="second_tb3_y_pos" default="0.0"/>
+    <arg name="second_tb3_z_pos" default="0.0"/>
+    <arg name="second_tb3_yaw" default="0.0"/>
+    <!-- Launch GMapping for each robot. -->
+    
+    <include file="$(find coop_mapping)/launch/my_turtlebot3_gmapping.launch" ns="$(arg first_tb3)">
+        <arg name="model" value="$(arg model)"/>
+        <arg name="set_base_frame" value="$(arg first_tb3)/base_footprint"/>
+        <arg name="set_odom_frame" value="$(arg first_tb3)/odom"/>
+        <arg name="set_map_frame" value="$(arg first_tb3)/map"/>
+    </include> 
+
+    <include file="$(find coop_mapping)/launch/my_turtlebot3_gmapping.launch" ns="$(arg second_tb3)">
+        <arg name="model" value="$(arg model)"/>
+        <arg name="set_base_frame" value="$(arg second_tb3)/base_footprint"/>
+        <arg name="set_odom_frame" value="$(arg second_tb3)/odom"/>
+        <arg name="set_map_frame" value="$(arg second_tb3)/map"/>
+    </include> 
+
+</launch>

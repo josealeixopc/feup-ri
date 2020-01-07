@@ -1,4 +1,6 @@
 import rospy
+import rospkg
+import roslaunch
 import numpy
 from gym import spaces
 import turtlebot3_two_robots_env
@@ -103,6 +105,18 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         # Init dictionary for both robots actions
         self.last_action = {}
 
+        # Set the logging system
+        rospack = rospkg.RosPack()
+        pkg_path = rospack.get_path('coop_mapping')
+
+        # Control variables for launching nodes from .launch files
+        self._gmapping_launch_file = pkg_path + os.path.sep + 'launch' + os.path.sep + 'spawn_2_robots_mapping.launch'
+        self._gmapping_running = False
+        self._gmapping_launch = None
+
+        self._map_merge_launch_file = pkg_path + os.path.sep + 'launch' + os.path.sep + '2_robots_multi_map_merge.launch'
+        self._map_merge_running = False
+        self._map_merge_launch = None
 
     def _set_init_pose(self):
         """Sets the Robots in its init pose
@@ -127,6 +141,14 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         self.cumulated_reward = 0.0
         # Set to false Done, because its calculated asyncronously
         self._episode_done = False
+
+        # (Re)Start GMapping
+        self._stop_gmapping()
+        self._start_gmapping()
+
+        # Start MapMerge
+        self._stop_map_merge()
+        self._start_map_merge()
 
 
     def _set_action(self, action):
@@ -362,3 +384,42 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         rospy.loginfo("END wait_until_twist_achieved...")
         
         return delta_time
+
+    def _start_map_merge(self):
+        if not self._map_merge_running:
+            rospy.logwarn("Creating launch parent for MapMerge launch file.")
+            uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
+            roslaunch.configure_logging(uuid)
+
+            self._map_merge_launch = roslaunch.parent.ROSLaunchParent(uuid, [self._map_merge_launch_file])
+
+            self._map_merge_launch.start()
+            rospy.logwarn("Started MapMerge launch file.")
+
+            self._map_merge_running = True
+    
+    def _start_gmapping(self):
+        if not self._gmapping_running:
+            rospy.logwarn("Creating launch parent for Gmapping launch file.")
+            uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
+            roslaunch.configure_logging(uuid)
+            self._gmapping_launch = roslaunch.parent.ROSLaunchParent(uuid, [self._gmapping_launch_file])
+
+            self._gmapping_launch.start()
+            rospy.logwarn("Started Gmapping launch file.")
+
+            self._gmapping_running = True
+
+    def _stop_map_merge(self):
+        if self._map_merge_running:
+            self._map_merge_launch.shutdown()
+            rospy.logwarn("Stopped MapMerge launch file.")
+
+            self._map_merge_running = False
+    
+    def _stop_gmapping(self):
+        if self._gmapping_running:
+            self._gmapping_launch.shutdown()
+            rospy.logwarn("Stopped Gmapping launch file.")
+
+            self._gmapping_running = False
