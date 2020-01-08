@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from shutil import copyfile
 import sys
 import errno
 import os
@@ -115,6 +116,9 @@ def train(environment):
 
         if e % 10 == 0:  # save weights every 10 episodes
             agent.save(training_weights_file)
+        
+        # Copy final map file to have a way of getting robot performance
+        copyfile("/tmp/ros_merge_map.pgm", results_dir + os.path.sep + "final-map.pgm")
 
     env.close()
     
