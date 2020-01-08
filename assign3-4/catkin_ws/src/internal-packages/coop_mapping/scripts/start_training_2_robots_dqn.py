@@ -118,7 +118,7 @@ def train(environment):
             agent.save(training_weights_file)
         
         # Copy final map file to have a way of getting robot performance
-        copyfile("/tmp/ros_merge_map.pgm", results_dir + os.path.sep + "final-map.pgm")
+        copyfile("/tmp/ros_merge_map.pgm", results_dir + os.path.sep + "final-map-episode-{}.pgm".format(e))
 
     env.close()
     
