@@ -37,3 +37,5 @@ ENV ROS_WS=/home/catkin_ws
 
 # Run second catkin_make (should be faster)
 RUN /bin/bash -c "source /opt/ros/melodic/setup.bash; catkin_make; source devel/setup.bash"
+
+ENTRYPOINT ["/bin/bash"]
