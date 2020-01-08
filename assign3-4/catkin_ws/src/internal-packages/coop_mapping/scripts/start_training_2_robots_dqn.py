@@ -21,7 +21,7 @@ import numpy as np
 
 VS_ROS_DEBUG = 0
 ENV_NAME = 'TurtleBot3WorldMapping2Robots-v0'
-EPISODES = 20
+EPISODES = 10000
 MAX_EPISODE_STEPS = 1000
 
 def create_dir(path):

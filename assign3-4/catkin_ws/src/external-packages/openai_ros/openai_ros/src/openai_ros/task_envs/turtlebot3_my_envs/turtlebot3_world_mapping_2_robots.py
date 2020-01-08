@@ -126,7 +126,14 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
 
         # Variables for map comparison
         self.actual_map_file = "turtlebot3_world_map.pgm"
-        self.current_min_map_difference = 1 # The minimum difference that has been observed
+
+        # The minimum difference that has been observed
+        self.current_min_map_difference = None
+
+        # The area in pixels that has been explored
+        self.previous_max_explored_area = None
+        self.current_max_explored_area = None
+
 
         # Start subscriber to /map to save it to file
         self._map_file_name = "/tmp/ros_merge_map"
@@ -154,6 +161,12 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         """
         # For Info Purposes
         self.cumulated_reward = 0.0
+
+        self.current_min_map_difference = 1
+
+        self.previous_max_explored_area = 0
+        self.current_max_explored_area = 0
+
         # Set to false Done, because its calculated asyncronously
         self._episode_done = False
 
@@ -239,16 +252,21 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         new_map_difference = compare_current_map_to_actual_map(self._map_file_name, self.actual_map_file)
         new_min_map_difference = min(new_map_difference, self.current_min_map_difference)
 
-        exploration_reward = self.current_min_map_difference - new_min_map_difference
+        accuracy_reward = self.current_min_map_difference - new_min_map_difference
+        area_reward = self.current_max_explored_area - self.previous_max_explored_area
 
-        # If the new difference is big, it's possibly a bug
-        if exploration_reward > 0.5:
-            exploration_reward = 0
+        # If the new difference is big, it's possibly a bug because of delay in starting /map topic
+        if accuracy_reward > 0.5:
+            accuracy_reward = 0
+
+        # Similar to what is above
+        if area_reward > 1000:
+            area_reward = 0
 
         rospy.logwarn("Old map dif - new map dif: {}-{} = {}".format(self.current_min_map_difference, new_min_map_difference, self.current_min_map_difference - new_min_map_difference))
 
         if not done:
-            reward = self.no_crash_reward_points + exploration_reward * self.exploration_multi_factor
+            reward = self.no_crash_reward_points + accuracy_reward * self.exploration_multi_factor + area_reward
         else:
             reward = self.crash_reward_points
 
@@ -456,9 +474,13 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
     def _map_callback(self, map_data):
         # Based on this: https://github.com/ros-planning/navigation/blob/melodic-devel/map_server/src/map_saver.cpp
 
+        explored_area = 0
+
         threshold_occupied = 65
         threshold_free = 25
-        f = open(self._map_file_name + ".pgm", "w")
+
+        # Open a tmp file to avoid racing condition
+        f = open(self._map_file_name + "_tmp.pgm", "w")
 
         f.write("P5\n# CREATOR: my_map_saver.py {} m/pix\n{} {}\n255\n".format(map_data.info.resolution, 
                                                                                 map_data.info.width,
@@ -470,9 +492,19 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
 
                 if map_data.data[i] >= 0 and map_data.data[i] <= threshold_free:
                     f.write(chr(254))
+                    explored_area +=1
+
                 elif map_data.data[i] >= threshold_occupied:
                     f.write(chr(0))
+
                 else:
                     f.write(chr(205))
 
         f.close()
+
+        # Rename file if possible. Rename won't work if any file is open.
+        os.rename(self._map_file_name + "_tmp.pgm", self._map_file_name + ".pgm")
+
+        if explored_area >= self.current_max_explored_area:
+            self.previous_max_explored_area = self.current_max_explored_area
+            self.current_max_explored_area = explored_area
