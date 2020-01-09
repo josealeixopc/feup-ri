@@ -2,26 +2,50 @@
 
 ## Installation
 
+### Pre-requisites
+
 - Python 2.7
-- ROS
+- ROS-Melodic (may work in other distros, but not tested)
 
-## Tips and Warnings for Development
+### Before running
 
-- Some problems can be solved by reading/downloading the code of the `openai_ros`, `open_ai_gym_construct` and `openai_examples_projects` from the [Construct BitBucket](https://bitbucket.org/theconstructcore/).
-    - The `turtlebot3` package in this repo is the original one from ROBOTIS. However, the one OpenAI_ROS works with is the one they have in their own BitButcket: [turtlebot3](https://bitbucket.org/theconstructcore/turtlebot3/src/master/).
-- Generate the `requirements.txt` command by running `pip freeze -l > requirements.txt`.
-    - The `-l` flag makes sure that only packages inside the virtualenv are put in the file. As `PYTHONPATH` is set by ROS and adds many packages to the `pip list`, you'll need to use the flag to cut out the ROS packages.
+**Change your working directory to `catkin_ws` and run the following commands.**
 
-## Creation
+Install all dependencies from the `src` folder.
 
-- Install TurtleBot3-related packages.
-- Follow the steps on section 11.2.1.6. of [this page](http://emanual.robotis.com/docs/en/platform/turtlebot3/simulation/#turtlebot3-simulation-using-gazebo).
+`rosdep install --from-paths src --ignore-src -r -y`
+
+Source your distro `setup.bash`:
+
+`source /opt/ros/$ROS_DISTRO/setup.bash`
+
+Build the package in the `src` folder:
+
+`catkin_make`
+
+Source the new Catkin environment:
+
+`source devel/setup.bash`
+
+You shouldn't need to run anything else, but in case you head into some environment variables related problem run:
+
+`export ENV=devel`
+
+`export ROS_WS=$PWD`
 
 ## Running
 
 ### Warnings
 
 - The first time the `turtlebot3_house.world` is used in Gazebo, it takes quite a long time to start, because it is downloading the map.
+- There may appear some Protobuf related errors that are not so easily solved. But you may look at the `README.md` inside the `src/external-packages/pgm_map_creator-master` folder.
+
+### Starting the RL environment
+
+```
+roslaunch coop_mapping 2_robots.launch 
+```
+
 
 ### Starting Gazebo and Robots
 
@@ -50,10 +74,6 @@ roslaunch coop_mapping 2_robots.launch
 1. Launches Multi Map Merger to merge each robot's map
 1. Launches RViz
 
-### Starting the RL environment
-
-TODO
-
 ## Generating maps from world files
 
 This is done using the `pgm_map_creator` inside `external packages`.
@@ -69,3 +89,16 @@ This is done using the `pgm_map_creator` inside `external packages`.
 2. Open another terminal, launch the request_publisher node
 `roslaunch pgm_map_creator request_publisher.launch`
 3. Wait for the plugin to generate map. It will be located in the map folder
+
+
+## Tips and Warnings for Development
+
+- Some problems can be solved by reading/downloading the code of the `openai_ros`, `open_ai_gym_construct` and `openai_examples_projects` from the [Construct BitBucket](https://bitbucket.org/theconstructcore/).
+    - The `turtlebot3` package in this repo is the original one from ROBOTIS. However, the one OpenAI_ROS works with is the one they have in their own BitButcket: [turtlebot3](https://bitbucket.org/theconstructcore/turtlebot3/src/master/).
+- Generate the `requirements.txt` command by running `pip freeze -l > requirements.txt`.
+    - The `-l` flag makes sure that only packages inside the virtualenv are put in the file. As `PYTHONPATH` is set by ROS and adds many packages to the `pip list`, you'll need to use the flag to cut out the ROS packages.
+
+## Creation
+
+- Install TurtleBot3-related packages.
+- Follow the steps on section 11.2.1.6. of [this page](http://emanual.robotis.com/docs/en/platform/turtlebot3/simulation/#turtlebot3-simulation-using-gazebo).
