@@ -1,12 +1,16 @@
 # feup-ri
-A repository for the Intelligent Robotics (RI) course of FEUP's Doctoral Program in Informatics Engineering.
+A repository for the Intelligent Robotics (RI) course of [FEUP](https://www.fe.up.pt)'s Doctoral Program in Informatics Engineering.
+
+![feup-logo](https://sigarra.up.pt/feup/pt/WEB_GESSI_DOCS.download_file?p_name=F-370784536/logo_cores_oficiais.jpg)
+
+Available at [Github](https://github.com/jazzchipc/feup-ri/).
+
+The source code and README of the final assignment are in the `assign3-4` directory.
 
 ## IMPORTANT
 
-In my own machine, I have commented the following line from the `bash.rc` file, because it was messing with my `PYTHONPATH` env variable:
+Always remember...
 
 ```
 source /opt/ros/melodic/setup.bash 
 ```
-
-When working with ROS, REMEMBER to source MANUALLY.

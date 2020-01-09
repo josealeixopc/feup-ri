@@ -1,11 +1,35 @@
-# Gazebo Multi-Robot SLAM
+# Gazebo Multi-Robot RL SLAM
+
+An OpenAI ROS reinforcement learning environment, where an agent controls two robots that map cooperatively an unexplored area in a Gazebo world.
+
+Code for paper "Reinforcement Learning in Navigation and Cooperative Mapping".
+
+## Authors
+
+- José Aleixo Cruz
+- Armando Sousa
+- Luís Paulo Reis
+
+Intelligent Robotics @[FEUP](https://www.fe.up.pt)
+
+![feup-logo](https://sigarra.up.pt/feup/pt/WEB_GESSI_DOCS.download_file?p_name=F-370784536/logo_cores_oficiais.jpg)
+
+## Directory structure
+
+- `catkin_ws/src` includes the source code for all packages
+  - `external-packages` has the source code of third-party packages that have been modified
+  - `internal-packages` has the source code of our own packages
+  - Packages have their own README files with some important warnings and tips.
+- `bash` has some utility scripts
 
 ## Installation
 
 ### Pre-requisites
 
 - Python 2.7
-- ROS-Melodic (may work in other distros, but not tested)
+- ROS-Melodic
+
+This has only been tested with ROS-Melodic on Ubuntu 18.04.
 
 ### Before running
 
@@ -50,6 +74,7 @@ You shouldn't need to run anything else, but in case you head into some environm
 roslaunch coop_mapping 2_robots.launch 
 ```
 
+## Other useful information
 
 ### Starting Gazebo and Robots
 
