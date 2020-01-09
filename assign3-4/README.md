@@ -11,6 +11,10 @@
 
 **Change your working directory to `catkin_ws` and run the following commands.**
 
+Install all Python dependencies:
+
+`pip install -r requirements.txt`
+
 Install all dependencies from the `src` folder.
 
 `rosdep install --from-paths src --ignore-src -r -y`
