@@ -33,7 +33,7 @@ def create_dir(path):
             raise
 
 def train(environment):
-    """DQN agent implementation based from https://github.com/keras-rl/keras-rl/blob/master/examples/dqn_cartpole.py
+    """DQN agent implementation based from https://github.com/keon/deep-q-learning/blob/master/dqn.py
     """
 
     if VS_ROS_DEBUG:
