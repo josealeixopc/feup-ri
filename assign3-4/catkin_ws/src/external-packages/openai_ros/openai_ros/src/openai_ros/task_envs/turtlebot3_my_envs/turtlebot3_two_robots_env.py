@@ -15,7 +15,7 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
     """Superclass for all CubeSingleDisk environments.
     """
 
-    def __init__(self, ros_ws_abspath, ros_launch_file_package="turtlebot3_gazebo", ros_launch_file_name="put_robot_in_world.launch"):
+    def __init__(self, ros_ws_abspath, ros_launch_file_package="coop_mapping", ros_launch_file_name="spawn_2_robots.launch"):
         """
         This is my own custom environment for two TB3 robots, based on the original OpenAI ROS environments.
 
@@ -43,7 +43,7 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
         # Variables that we give through the constructor.
         # None in this case
 
-        # We launch the ROSlaunch that spawns the robot into the world
+        # We launch the ROSlaunch that spawns the two robots into the world
         ROSLauncher(rospackage_name=ros_launch_file_package,
                     launch_file_name=ros_launch_file_name,
                     ros_ws_abspath=ros_ws_abspath)
@@ -52,7 +52,7 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
         # Doesnt have any accesibles
         self.controllers_list = []
 
-        # It doesnt use namespace
+        # It doesnt use namespace (The environment itself is not in a namespace. The robots are.)
         self.robot_name_space = ""
 
         # We launch the init function of the Parent Class robot_gazebo_env.RobotGazeboEnv
@@ -196,7 +196,8 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
         """Checks if episode done based on observations given.
         """
         raise NotImplementedError()
-        
+    
+
     # Methods that the TrainingEnvironment will need.
     # ----------------------------
     def move_base(self, linear_speed, angular_speed, namespace, epsilon=0.05, update_rate=10):
@@ -243,6 +244,7 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
         rate = rospy.Rate(update_rate)
         start_wait_time = rospy.get_rostime().to_sec()
         end_wait_time = 0.0
+        epsilon = 0.05
         
         rospy.loginfo("Desired Twist Cmd>>" + str(cmd_vel_value))
         rospy.loginfo("epsilon>>" + str(epsilon))
@@ -257,7 +259,8 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
         
         while not rospy.is_shutdown():
             current_odometry = self._check_odom_ready(namespace)
-            # IN turtlebot3 the odometry angular readings are inverted, so we have to invert the sign.
+
+            # In turtlebot3 the odometry angular readings are inverted, so we have to invert the sign.
             odom_linear_vel = current_odometry.twist.twist.linear.x
             odom_angular_vel = current_odometry.twist.twist.angular.z
             
@@ -271,18 +274,18 @@ class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
                 rospy.loginfo("{} reached Velocity!".format(namespace))
                 end_wait_time = rospy.get_rostime().to_sec()
                 break
+            
+            if self.check_if_crashed(namespace):
+                rospy.logerr("{} has crashed while trying to achieve Twist.".format(namespace))
+                self._episode_done = True
+                break
+
             rospy.loginfo("{} is not there yet, keep waiting...".format(namespace))
             rate.sleep()
-        delta_time = end_wait_time- start_wait_time
+            
+        delta_time = end_wait_time - start_wait_time
         rospy.loginfo("[Wait Time=" + str(delta_time)+"]")
         
         rospy.loginfo("END wait_until_twist_achieved...")
         
         return delta_time
-        
-
-    def get_odom(self, namespace):
-        return self.odom[namespace]
-        
-    def get_laser_scan(self, namespace):
-        return self.laser_scan[namespace]

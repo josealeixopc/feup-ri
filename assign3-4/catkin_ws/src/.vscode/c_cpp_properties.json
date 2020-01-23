@@ -1,0 +1,25 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "",
+        "limitSymbolsToIncludedHeaders": true
+      },
+      "includePath": [
+        "/home/jazz/Projects/FEUP/ProDEI/feup-ri/assign3-4/catkin_ws/devel/include/**",
+        "/opt/ros/melodic/include/**",
+        "/home/jazz/Projects/FEUP/ProDEI/feup-ri/assign3-4/catkin_ws/src/external-packages/m-explore-master/explore/include/**",
+        "/home/jazz/Projects/FEUP/ProDEI/feup-ri/assign3-4/catkin_ws/src/external-packages/hector_slam-melodic-devel/hector_geotiff/include/**",
+        "/home/jazz/Projects/FEUP/ProDEI/feup-ri/assign3-4/catkin_ws/src/external-packages/hector_slam-melodic-devel/hector_map_tools/include/**",
+        "/home/jazz/Projects/FEUP/ProDEI/feup-ri/assign3-4/catkin_ws/src/external-packages/hector_slam-melodic-devel/hector_mapping/include/**",
+        "/home/jazz/Projects/FEUP/ProDEI/feup-ri/assign3-4/catkin_ws/src/external-packages/hector_slam-melodic-devel/hector_marker_drawing/include/**",
+        "/home/jazz/Projects/FEUP/ProDEI/feup-ri/assign3-4/catkin_ws/src/external-packages/m-explore-master/map_merge/include/**",
+        "/home/jazz/Projects/FEUP/ProDEI/feup-ri/assign3-4/catkin_ws/src/external-packages/turtlebot3_simulations-master/turtlebot3_fake/include/**",
+        "/home/jazz/Projects/FEUP/ProDEI/feup-ri/assign3-4/catkin_ws/src/external-packages/turtlebot3_simulations-master/turtlebot3_gazebo/include/**",
+        "/home/jazz/Projects/FEUP/ProDEI/feup-ri/assign3-4/catkin_ws/src/external-packages/turtlebot3-master/turtlebot3_slam/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS"
+    }
+  ]
+}

@@ -8,7 +8,6 @@ from datetime import datetime
 import gym
 import numpy
 import time
-import qlearn
 from gym import wrappers
 
 # ROS packages required
@@ -117,8 +116,9 @@ def train(environment):
         if e % 10 == 0:  # save weights every 10 episodes
             agent.save(training_weights_file)
         
-        # Copy final map file to have a way of getting robot performance
-        copyfile("/tmp/ros_merge_map.pgm", results_dir + os.path.sep + "final-map-episode-{}.pgm".format(e))
+            if e != 0:
+                # Copy final map file to have a way of getting robot performance without being writing to file
+                copyfile("/tmp/ros_merge_map.pgm", results_dir + os.path.sep + "final-map-episode-{}.pgm".format(e))
 
     env.close()
     
