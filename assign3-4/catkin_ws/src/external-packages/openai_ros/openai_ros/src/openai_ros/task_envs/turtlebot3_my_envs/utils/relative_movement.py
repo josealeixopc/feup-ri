@@ -15,7 +15,7 @@ def get_position_in_map(namespace=""):
     tf_listener = tf.TransformListener()
 
     my_base_link = namespace + "/base_link"
-    my_map = namespace + "/map"
+    my_map = "/map"
 
     position = None
     quaternion = None
@@ -27,7 +27,7 @@ def get_position_in_map(namespace=""):
 
     while not rospy.is_shutdown():
         try:
-            position, quaternion = tf_listener.lookupTransform(my_base_link, my_map, rospy.Time(0))
+            position, quaternion = tf_listener.lookupTransform(my_map, my_base_link, rospy.Time(0))
         except:
             continue
 
@@ -38,4 +38,10 @@ def get_position_in_map(namespace=""):
 if __name__ == "__main__":
     rospy.init_node('relative_movement_py')
 
-    print(get_position_in_map())
+    position, quaternion = get_position_in_map("/tb3_0")
+
+    print("Position: ", position)
+    print("Quaternion: ",  quaternion)
+    print("Euler from quaternion: ", tf.transformations.euler_from_quaternion(quaternion))
+
+
