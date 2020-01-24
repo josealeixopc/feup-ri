@@ -1,5 +1,6 @@
 import os
 import itertools
+import threading
 
 import rospy
 import rospkg
@@ -140,7 +141,8 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
                                                     map_exploration_component_shape))
 
         # TODO: CHANGE THIS
-        self.observation_space = spaces.MultiDiscrete(laser_scan_component_shape)
+        self.observation_space = spaces.MultiDiscrete(
+            laser_scan_component_shape)
 
         rospy.loginfo("ACTION SPACES TYPE===>"+str(self.action_space))
         rospy.loginfo("OBSERVATION SPACES TYPE===>" +
@@ -247,6 +249,8 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         # Second robot has action -> action // 3
         robot_actions[self.robot_namespaces[1]] = action // self.number_actions
 
+        threads = []
+
         for ns in self.robot_namespaces:
             current_robot_action = robot_actions[ns]
             rospy.loginfo("Start Set Action for Robot {} ==> ".format(
@@ -266,11 +270,19 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
                 self.last_action[ns] = "TURN_RIGHT"
 
             # We tell TurtleBot3 the linear and angular speed to set to execute
-            self.move_base(linear_speed, angular_speed, ns,
-                           epsilon=0.01, update_rate=10)
+            t = threading.Thread(target=self.move_base,
+                                 args=(linear_speed, angular_speed, ns,), kwargs={"epsilon": 0.01, "update_rate": 10})
+
+            threads.append(t)
+            t.start()
 
             rospy.loginfo(
-                "END Set Action for Robot {} ==>".format(ns)+str(action))
+                "Setting Action for Robot {} ==>".format(ns)+str(action))
+
+        for t in threads:
+            t.join()
+
+        rospy.loginfo("Finished bot action settings.")
 
     def _get_obs(self):
         """
