@@ -39,7 +39,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         # Depending on which environment we're in, decide to launch Gazebo with or without GUI.
         gazebo_launch_file = "start_empty_tb3_world.launch"
 
-        if os.environ.get('ENV') == 'deploy':
+        if os.environ.get('ENV') == 'deploy' or os.environ.get('ENV') == 'dev-no-gazebo':
             gazebo_launch_file = "start_empty_tb3_world_no_gui.launch"
 
         ROSLauncher(rospackage_name="coop_mapping",
@@ -56,6 +56,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
                                                                ros_launch_file_package="coop_mapping",
                                                                ros_launch_file_name="spawn_2_robots.launch")
 
+        ### ACTIONS
         # Only variable needed to be set here
         self.number_actions = rospy.get_param('/turtlebot3/n_actions')
         self.number_robots = len(self.robot_namespaces)  # should be 2
@@ -67,7 +68,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         # We set the reward range, which is not compulsory but here we do it.
         self.reward_range = (-numpy.inf, numpy.inf)
 
-        # Actions and Observations
+        ### OBSERVATIONS
         self.linear_forward_speed = rospy.get_param(
             '/turtlebot3/linear_forward_speed')
         self.linear_turn_speed = rospy.get_param(
@@ -138,7 +139,8 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
                                                     rotation_component_shape,
                                                     map_exploration_component_shape))
 
-        self.observation_space = spaces.MultiDiscrete(multi_discrete_shape)
+        # TODO: CHANGE THIS
+        self.observation_space = spaces.MultiDiscrete(laser_scan_component_shape)
 
         rospy.loginfo("ACTION SPACES TYPE===>"+str(self.action_space))
         rospy.loginfo("OBSERVATION SPACES TYPE===>" +

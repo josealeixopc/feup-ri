@@ -1,5 +1,21 @@
 # catkin_ws
 
+## coop_mapping
+
+### Environmental variables
+
+The `ROS_WS` environment variable is **mandatory** and should be set to the ROS workspace path of the machine. By default, it is set to my own machine, so you'll need to change it to run in a different machine.
+
+The `ENV` variable determines what gets launched during training. The default value is `dev-no-gazebo`. These are the available values:
+
+- `dev-no-gazebo` launches including RViz but runs Gazebo headless (runs only `gzserver` and not `gzclient`).
+- `dev-gazebo` launches RViz **and** Gazebo client (Gazebo client is quite heavy, so processing will be a lot slower).
+- `deploy` does not launch RViz nor Gazebo client, so that the training may run in a headless server. 
+
+### Running
+
+
+
 ## Debugging a ROSPY script
 
 1. Install the ROS extension for VS Code

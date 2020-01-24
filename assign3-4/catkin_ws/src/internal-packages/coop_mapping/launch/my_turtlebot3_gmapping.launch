@@ -1,4 +1,6 @@
 <launch>
+  <!-- Custom file for launching gmapping. Changed model argument from env to optenv. -->
+
   <!-- Arguments -->
   <arg name="model" default="$(optenv TURTLEBOT3_MODEL burger)" doc="model type [burger, waffle, waffle_pi]"/>
   <arg name="configuration_basename" default="turtlebot3_lds_2d.lua"/>

@@ -40,38 +40,6 @@
         <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-urdf -model $(arg second_tb3) -x $(arg second_tb3_x_pos) -y $(arg second_tb3_y_pos) -z $(arg second_tb3_z_pos) -Y $(arg second_tb3_yaw) -param robot_description" />
     </group>
 
-    <!-- Launch GMapping for each robot. -->
-    
-    <!-- <include file="$(find coop_mapping)/launch/my_turtlebot3_gmapping.launch" ns="$(arg first_tb3)">
-        <arg name="model" value="$(arg model)"/>
-        <arg name="set_base_frame" value="$(arg first_tb3)/base_footprint"/>
-        <arg name="set_odom_frame" value="$(arg first_tb3)/odom"/>
-        <arg name="set_map_frame" value="$(arg first_tb3)/map"/>
-    </include> 
-
-    <include file="$(find coop_mapping)/launch/my_turtlebot3_gmapping.launch" ns="$(arg second_tb3)">
-        <arg name="model" value="$(arg model)"/>
-        <arg name="set_base_frame" value="$(arg second_tb3)/base_footprint"/>
-        <arg name="set_odom_frame" value="$(arg second_tb3)/odom"/>
-        <arg name="set_map_frame" value="$(arg second_tb3)/map"/>
-    </include>  -->
-
-
-    <!-- Launch multi_map_merge. -->
-    <!-- <include file="$(find coop_mapping)/launch/2_robots_multi_map_merge.launch">
-        <arg name="first_tb3"  value="$(arg first_tb3)"/>
-        <arg name="first_tb3_x_pos" value="$(arg first_tb3_x_pos)"/>
-        <arg name="first_tb3_y_pos" value="$(arg first_tb3_y_pos)"/>
-        <arg name="first_tb3_z_pos" value="$(arg first_tb3_z_pos)"/>
-        <arg name="first_tb3_yaw"   value="$(arg first_tb3_yaw)"/>
-
-        <arg name="second_tb3"  value="$(arg second_tb3)"/>
-        <arg name="second_tb3_x_pos" value="$(arg second_tb3_x_pos)"/>
-        <arg name="second_tb3_y_pos" value="$(arg second_tb3_y_pos)"/>
-        <arg name="second_tb3_z_pos" value="$(arg second_tb3_z_pos)"/>
-        <arg name="second_tb3_yaw"   value="$(arg second_tb3_yaw)"/>
-    </include> -->
-
     <!-- Launch RViz -->
     <group if="$(eval env('ENV') != 'deploy')">
         <node type="rviz" name="rviz" pkg="rviz" args="-d $(find coop_mapping)/rviz/2_robots.rviz"/>

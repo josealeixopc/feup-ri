@@ -1,4 +1,0 @@
-<launch>
-    <!-- Launch the training system -->
-    <node pkg="coop_mapping" name="turtlebot3_world_mapping_dqn" type="start_training_1_robot_dqn.py" output="screen"/>
-</launch>

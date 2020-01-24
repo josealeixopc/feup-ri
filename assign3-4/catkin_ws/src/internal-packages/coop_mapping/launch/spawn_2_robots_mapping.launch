@@ -15,6 +15,7 @@
     <arg name="second_tb3_y_pos" default="0.0"/>
     <arg name="second_tb3_z_pos" default="0.0"/>
     <arg name="second_tb3_yaw" default="0.0"/>
+    
     <!-- Launch GMapping for each robot. -->
     
     <include file="$(find coop_mapping)/launch/my_turtlebot3_gmapping.launch" ns="$(arg first_tb3)">

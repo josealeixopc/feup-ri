@@ -24,6 +24,8 @@ ENV_NAME = 'TurtleBot3WorldMapping2Robots-v0'
 EPISODES = 10000
 MAX_EPISODE_STEPS = 1000
 
+ENV_VALUES = ['dev-no-gazebo', 'dev-gazebo', 'deploy']
+
 def create_dir(path):
     try:
         os.makedirs(os.path.dirname(path))
@@ -46,6 +48,12 @@ def train(environment):
     
     # Set TB3 model
     os.environ['TURTLEBOT3_MODEL'] = 'burger'
+
+    # Set ENV variable
+    if os.environ.get('ENV') is None:
+        os.environ['ENV'] = ENV_VALUES[0]
+
+    assert os.environ.get('ENV') in ENV_VALUES, "The ENV variable is not one of the allowable values: " + ','.join(ENV_VALUES)
 
     # Set WS path if no env variable is set
     if os.environ.get('ROS_WS') is None:
