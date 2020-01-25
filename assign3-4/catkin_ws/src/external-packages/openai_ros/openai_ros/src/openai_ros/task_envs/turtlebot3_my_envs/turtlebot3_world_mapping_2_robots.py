@@ -1,11 +1,12 @@
 import os
 import itertools
 import threading
+import sys
 
 import rospy
 import rospkg
 import roslaunch
-import numpy
+import numpy as np
 from gym import spaces
 import turtlebot3_two_robots_env
 from gym.envs.registration import register
@@ -18,6 +19,8 @@ from nav_msgs.msg import OccupancyGrid
 
 from utils.pseudo_collision_detector import PseudoCollisionDetector
 from utils.image_similarity_ros import compare_current_map_to_actual_map
+from utils.relative_movement import get_robot_position_in_map
+from utils import scale 
 
 
 class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRobotsEnv):
@@ -67,7 +70,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
             pow(self.number_actions, self.number_robots))
 
         # We set the reward range, which is not compulsory but here we do it.
-        self.reward_range = (-numpy.inf, numpy.inf)
+        self.reward_range = (-np.inf, np.inf)
 
         ### OBSERVATIONS
         self.linear_forward_speed = rospy.get_param(
@@ -110,8 +113,8 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         # In the discretization method.
         laser_scan = self.laser_scan[self.robot_namespaces[0]]
         num_laser_readings = len(laser_scan.ranges)/self.new_ranges
-        high = numpy.full((num_laser_readings), self.max_laser_value)
-        low = numpy.full((num_laser_readings), self.min_laser_value)
+        high = np.full((num_laser_readings), self.max_laser_value)
+        low = np.full((num_laser_readings), self.min_laser_value)
 
         self.position_min_value = -20
         self.position_max_value = 20
@@ -182,6 +185,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         self._map_merge_launch = None
 
         # Variables for map comparison
+        self.map_data = None
         self.actual_map_file = "turtlebot3_world_map.pgm"
 
         # The minimum difference that has been observed
@@ -194,6 +198,15 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         # Start subscriber to /map to save it to file
         self._map_file_name = "/tmp/ros_merge_map"
         rospy.Subscriber('map', OccupancyGrid, self._map_callback)
+
+    ### OVERRIDES
+
+    def step(self, action):
+        if os.environ.get('STEP_DEBUG') != None:
+            sys.stderr.write("Waiting for permission to do next step... Press a key and ENTER: ")
+            raw_input()
+
+        return super(TurtleBot3WorldMapping2RobotsEnv, self).step(action)
 
     def _set_init_pose(self):
         """Sets the Robots in its init pose
@@ -292,15 +305,18 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         all_robots_observations = []
 
         for ns in self.robot_namespaces:
-            # We get the laser scan data
-            laser_scan = self.laser_scan[ns]
-            discretized_observations = self.discretize_scan_observation(
-                laser_scan, self.new_ranges)
-            all_robots_observations.extend(discretized_observations)
+            # For each robot, we gather the laser_scan, position and rotation obs
+            all_robots_observations.extend(self._get_laser_scan_obs(ns))
+            #all_robots_observations.extend(self._get_position_obs(ns))
+            #all_robots_observations.extend(self._get_rotation_obs(ns))
+
+        # The map_exploration obs is common to both robots
+        #all_robots_observations.extend(self._get_map_exploration_obs())
 
         rospy.loginfo("Observations from all robots==>" +
                       str(all_robots_observations))
         rospy.loginfo("END Get Observation ==>")
+
         return all_robots_observations
 
     def _is_done(self, observations):
@@ -353,49 +369,6 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         return reward
 
     # Internal TaskEnv Methods
-
-    def discretize_scan_observation(self, data, new_ranges):
-        """
-        Discards all the laser readings that are not multiple in index of new_ranges
-        value.
-        """
-        discretized_ranges = []
-        mod = len(data.ranges)/new_ranges
-
-        # rospy.loginfo("data=" + str(data))
-        rospy.loginfo("new_ranges=" + str(new_ranges))
-        rospy.loginfo("mod=" + str(mod))
-
-        for i, item in enumerate(data.ranges):
-            if (i % mod == 0):
-                if item == float('Inf') or numpy.isinf(item):
-                    discretized_ranges.append(self.max_laser_value)
-                elif numpy.isnan(item):
-                    discretized_ranges.append(self.min_laser_value)
-                else:
-                    discretized_ranges.append(int(item))
-
-            if (self.min_range > item > 0):
-                rospy.logerr("done Validation >>> item=" +
-                             str(item)+"< "+str(self.min_range))
-                self._episode_done = True
-            else:
-                rospy.loginfo("NOT done Validation >>> item=" +
-                              str(item)+"< "+str(self.min_range))
-
-        return discretized_ranges
-
-    def get_vector_magnitude(self, vector):
-        """
-        It calculated the magnitude of the Vector3 given.
-        This is usefull for reading imu accelerations and knowing if there has been 
-        a crash
-        :return:
-        """
-        contact_force_np = numpy.array((vector.x, vector.y, vector.z))
-        force_magnitude = numpy.linalg.norm(contact_force_np)
-
-        return force_magnitude
 
     def check_if_crashed(self, ns):
         """
@@ -457,6 +430,9 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
     def _map_callback(self, map_data):
         # Based on this: https://github.com/ros-planning/navigation/blob/melodic-devel/map_server/src/map_saver.cpp
 
+        # Save map_data
+        self.map_data = map_data
+
         explored_area = 0
 
         threshold_occupied = 65
@@ -492,3 +468,85 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         if explored_area >= self.current_max_explored_area:
             self.previous_max_explored_area = self.current_max_explored_area
             self.current_max_explored_area = explored_area
+
+    ### OBSERVATION-RELATED METHODS
+
+    def _discretize_laser_scan_observation(self, data, new_ranges):
+        """
+        Discards all the laser readings that are not multiple in index of new_ranges
+        value.
+        """
+        discretized_ranges = []
+        mod = len(data.ranges)/new_ranges
+
+        # rospy.loginfo("data=" + str(data))
+        rospy.loginfo("new_ranges=" + str(new_ranges))
+        rospy.loginfo("mod=" + str(mod))
+
+        for i, item in enumerate(data.ranges):
+            if (i % mod == 0):
+                if item == float('Inf') or np.isinf(item):
+                    discretized_ranges.append(self.max_laser_value)
+                elif np.isnan(item):
+                    discretized_ranges.append(self.min_laser_value)
+                else:
+                    discretized_ranges.append(int(item))
+
+            if (self.min_range > item > 0):
+                rospy.logerr("done Validation >>> item=" +
+                             str(item)+"< "+str(self.min_range))
+                self._episode_done = True
+            else:
+                rospy.loginfo("NOT done Validation >>> item=" +
+                              str(item)+"< "+str(self.min_range))
+
+        return discretized_ranges
+
+    def _discretize_position_and_rotation_observation(self, position, rotation):
+        pos_x, pos_y, pos_z = position  # in meters
+        rot_x, rot_y, rot_z = rotation  # in radians
+
+        # We are only interested in pos_x and pos_y (pos_z should be constant)
+        # We rescale both values from an assumed scale of -10 to 10 (we clip them), to a new scale 0 to (max-min) values
+        clipped_pos_x, clipped_pos_y = np.clip([pos_x, pos_y], -10, 10)
+        scaled_pos_x = scale.scale_scalar(clipped_pos_x, -10, 10, 0, self.position_max_value, self.position_min_value)
+        scaled_pos_y = scale.scale_scalar(clipped_pos_y, -10, 10, 0, self.position_max_value, self.position_min_value)
+
+        # And we round the values
+        discretized_pos_x = np.rint(scaled_pos_x)
+        discretized_pos_y = np.rint(scaled_pos_y)
+
+        # We are only interested in rot_z (rot_x and rot_y should be constant). 
+        # We convert it so that it gives us the positive angle of rotation (between 0 and 2pi).
+        rot_z = rot_z % (2 * np.pi)
+        
+        # Now we rescale it to a scale from 0 to (max-min) values.
+        scaled_rot_z = scale.scale_scalar(rot_z, 0, 2*np.pi, 0, self.rotation_max_value - self.rotation_min_value)
+
+        # And we round it
+        discretized_rot_z = np.rint(scaled_rot_z)
+
+        return discretized_pos_x, discretized_pos_y, discretized_rot_z
+
+    def _discretize_map_exploration_observation(self, map_data):
+        # We already do some work in the "simplify_occupancy_grid" function. 
+        # Here we just want to rescale and round the values to fit our observation space.
+        simplified_map_data = simplify_occupancy_grid(map_data, self.simplified_grid_dimension)
+
+        scaled_map_data = scale.scale_arr(simplified_map_data, 0, 1, 0, self.simplified_grid_max_value - self.simplified_grid_min_value)
+        discretized_map_data = np.rint(scaled_map_data)
+
+        return discretized_map_data
+
+
+    def _get_laser_scan_obs(self, namespace):
+        laser_scan = self.laser_scan[namespace]
+        return self._discretize_laser_scan_observation(laser_scan, self.new_ranges)
+        
+
+    def _get_position_and_rotation_obs(self, namespace):
+        position, rotation = get_robot_position_in_map(namespace)
+        return self._discretize_position_and_rotation_observation(position, rotation)
+    
+    def _get_map_exploration_obs(self):
+        return _discretize_map_exploration_observation(self.map_data)

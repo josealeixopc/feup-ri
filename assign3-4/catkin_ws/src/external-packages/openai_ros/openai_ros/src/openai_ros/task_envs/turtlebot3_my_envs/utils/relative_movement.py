@@ -11,7 +11,7 @@ def generate_move_forward(distance, linear_velocity, namespace=""):
     twist.angular.z = 0.0
     twist.linear.y = 0.0
 
-def get_position_in_map(namespace=""):
+def get_robot_position_in_map(namespace=""):
     tf_listener = tf.TransformListener()
 
     my_base_link = namespace + "/base_link"
@@ -33,15 +33,14 @@ def get_position_in_map(namespace=""):
 
         break
 
-    return position, quaternion
+    return position, tf.transformations.euler_from_quaternion(quaternion)
 
 if __name__ == "__main__":
     rospy.init_node('relative_movement_py')
 
-    position, quaternion = get_position_in_map("/tb3_0")
+    position, rotation = get_robot_position_in_map("/tb3_0")
 
     print("Position: ", position)
-    print("Quaternion: ",  quaternion)
-    print("Euler from quaternion: ", tf.transformations.euler_from_quaternion(quaternion))
+    print("Rotation: ",  rotation)
 
 

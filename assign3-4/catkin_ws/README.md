@@ -12,6 +12,9 @@ The `ENV` variable determines what gets launched during training. The default va
 - `dev-gazebo` launches RViz **and** Gazebo client (Gazebo client is quite heavy, so processing will be a lot slower).
 - `deploy` does not launch RViz nor Gazebo client, so that the training may run in a headless server. 
 
+Antoher useful variable is `STEP_DEBUG`. If this ENV variable is set with any value, then before each step the program will ask for input,
+so that we can observe what happens in each step.
+
 ### Running
 
 
