@@ -172,12 +172,12 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
 
         # Control variables for launching nodes from .launch files
         self._gmapping_launch_file = pkg_path + os.path.sep + \
-            'launch' + os.path.sep + 'spawn_2_robots_mapping.launch'
+            'launch' + os.path.sep + 'init_2_robots_mapping.launch'
         self._gmapping_running = False
         self._gmapping_launch = None
 
         self._map_merge_launch_file = pkg_path + os.path.sep + \
-            'launch' + os.path.sep + '2_robots_multi_map_merge.launch'
+            'launch' + os.path.sep + 'init_2_robots_multi_map_merge.launch'
         self._map_merge_running = False
         self._map_merge_launch = None
 

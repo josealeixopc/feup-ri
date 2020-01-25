@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 # Based on: https://answers.ros.org/question/267199/how-can-i-publish-exactly-once-when-the-node-is-run/
+# Running `rostopic pub syscommand std_msgs/String "savegeotiff"` from a script.
 
 import rospy
 

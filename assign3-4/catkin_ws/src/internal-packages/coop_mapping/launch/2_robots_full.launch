@@ -66,6 +66,17 @@
         <arg name="set_map_frame" value="$(arg second_tb3)/map"/>
     </include> 
     
+    <!-- Launch hector_saver for both robots. -->
+    <include file="$(find coop_mapping)/launch/hector_saver.launch" ns="$(arg first_tb3)">
+        <arg name="trajectory_source_frame_name" value="$(arg first_tb3)/base_link">
+        <arg name="map_file_base_name" value="hector_slam_map_$(arg first_tb3)"/>
+    </include>
+
+    <include file="$(find coop_mapping)/launch/hector_saver.launch" ns="$(arg second_tb3)">
+        <arg name="trajectory_source_frame_name" value="$(arg second_tb3)/base_link">
+        <arg name="map_file_base_name" value="hector_slam_map_$(arg second_tb3)"/>
+    </include>
+
     <!-- Launch multi_map_merge. -->
     <include file="$(find coop_mapping)/launch/2_robots_multi_map_merge.launch">
         <arg name="first_tb3"  value="$(arg first_tb3)"/>
@@ -80,7 +91,7 @@
         <arg name="second_tb3_z_pos" value="$(arg second_tb3_z_pos)"/>
         <arg name="second_tb3_yaw"   value="$(arg second_tb3_yaw)"/>
     </include>
-
+    
     <!-- Launch RViz -->
     <node type="rviz" name="rviz" pkg="rviz" args="-d $(find coop_mapping)/rviz/2_robots.rviz"/>
 
