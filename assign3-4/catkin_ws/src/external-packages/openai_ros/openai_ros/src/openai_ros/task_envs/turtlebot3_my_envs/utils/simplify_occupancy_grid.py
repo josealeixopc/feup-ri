@@ -47,11 +47,23 @@ def bin_ndarray(ndarray, new_shape, operation='sum'):
 def simplify_occupancy_grid(map_data, dim=4):
     map_data_arr = np.array(map_data.data)
 
+    # If the cell is unexplored, it has value -1, so we change it to 0
+    # If the cell is explored, it has value between 0 and 100, so we change it to 1
+    with np.nditer(map_data_arr, op_flags=['readwrite']) as it:
+        for x in it:
+            if x >= 0:
+                # Justification for the three dots: 
+                # https://stackoverflow.com/questions/42190783/what-does-three-dots-in-python-mean-when-indexing-what-looks-like-a-number
+                x[...] = 1
+            else:
+                x[...] = 0
+
+
     # reshape map_data to 2D array
     reshaped_data = np.reshape(map_data_arr, (map_data.info.height, map_data.info.width))    
 
     # decrease size of 2D array by summing/averaging neighbor cells
-    binned_data = bin_ndarray(reshaped_data, (dim, dim), operation='sum')
+    binned_data = bin_ndarray(reshaped_data, (dim, dim), operation='mean')
 
     return binned_data
 
