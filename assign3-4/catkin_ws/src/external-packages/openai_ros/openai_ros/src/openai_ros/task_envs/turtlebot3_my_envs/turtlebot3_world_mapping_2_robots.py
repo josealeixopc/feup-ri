@@ -143,9 +143,8 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
                                                     rotation_component_shape,
                                                     map_exploration_component_shape))
 
-        # TODO: CHANGE THIS
         self.observation_space = spaces.MultiDiscrete(
-            laser_scan_component_shape)
+            multi_discrete_shape)
 
         rospy.loginfo("ACTION SPACES TYPE===>"+str(self.action_space))
         rospy.loginfo("OBSERVATION SPACES TYPE===>" +
@@ -190,6 +189,10 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
 
         # The minimum difference that has been observed
         self.current_min_map_difference = None
+
+        # The thresholds to calculate map exploration
+        self.threshold_occupied = 65
+        self.threshold_free = 25
 
         # The area in pixels that has been explored
         self.previous_max_explored_area = None
@@ -433,42 +436,6 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         # Save map_data
         self.map_data = map_data
 
-        explored_area = 0
-
-        threshold_occupied = 65
-        threshold_free = 25
-
-        # Open a tmp file to avoid racing condition
-        f = open(self._map_file_name + "_tmp.pgm", "w")
-
-        f.write("P5\n# CREATOR: my_map_saver.py {} m/pix\n{} {}\n255\n".format(map_data.info.resolution,
-                                                                               map_data.info.width,
-                                                                               map_data.info.height))
-
-        for y in range(map_data.info.height):
-            for x in range(map_data.info.width):
-                i = x + (map_data.info.height - y - 1) * map_data.info.width
-
-                if map_data.data[i] >= 0 and map_data.data[i] <= threshold_free:
-                    f.write(chr(254))
-                    explored_area += 1
-
-                elif map_data.data[i] >= threshold_occupied:
-                    f.write(chr(0))
-
-                else:
-                    f.write(chr(205))
-
-        f.close()
-
-        # Rename file if possible. Rename won't work if any file is open.
-        os.rename(self._map_file_name + "_tmp.pgm",
-                  self._map_file_name + ".pgm")
-
-        if explored_area >= self.current_max_explored_area:
-            self.previous_max_explored_area = self.current_max_explored_area
-            self.current_max_explored_area = explored_area
-
     ### OBSERVATION-RELATED METHODS
 
     def _discretize_laser_scan_observation(self, data, new_ranges):
@@ -550,3 +517,53 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
     
     def _get_map_exploration_obs(self):
         return _discretize_map_exploration_observation(self.map_data)
+
+
+    ### REWARD RELATED METHODS
+
+    def _calculate_map_exploration(self, map_data):
+        """
+        Arguments:
+            map_data {[type]} -- [description]
+        """
+        explored_area = 0
+
+        for y in range(map_data.info.height):
+            for x in range(map_data.info.width):
+                i = x + (map_data.info.height - y - 1) * map_data.info.width
+
+                if map_data.data[i] >= 0 and map_data.data[i] <= self.threshold_free:
+                    explored_area += 1
+
+        if explored_area >= self.current_max_explored_area:
+            self.previous_max_explored_area = self.current_max_explored_area
+            self.current_max_explored_area = explored_area
+
+    ### LOGGING RELATED METHODS
+
+    def _save_map_image(self, map_data):
+        # Open a tmp file to avoid racing condition
+        f = open(self._map_file_name + "_tmp.pgm", "w")
+
+        f.write("P5\n# CREATOR: turtlebot3_world_mapping_2_robots.py {} m/pix\n{} {}\n255\n".format(map_data.info.resolution,
+                                                                                                    map_data.info.width,
+                                                                                                    map_data.info.height))
+
+        for y in range(map_data.info.height):
+            for x in range(map_data.info.width):
+                i = x + (map_data.info.height - y - 1) * map_data.info.width
+
+                if map_data.data[i] >= 0 and map_data.data[i] <= self.threshold_free:
+                    f.write(chr(254))
+
+                elif map_data.data[i] >= self.threshold_occupied:
+                    f.write(chr(0))
+
+                else:
+                    f.write(chr(205))
+
+        f.close()
+
+        # Rename file if possible.
+        os.rename(self._map_file_name + "_tmp.pgm",
+                  self._map_file_name + ".pgm")
