@@ -114,8 +114,6 @@ def train(environment):
             rospy.logwarn("After taking action (s, r, d) ==> {}; {}; {}".format(state, reward, done))
 
             if done:
-                print("episode: {}/{}, score: {}, e: {:.2}"
-                      .format(e, EPISODES, time, agent.epsilon))
                 break
 
             if len(agent.memory) > batch_size:
@@ -123,10 +121,9 @@ def train(environment):
 
         if e % 10 == 0:  # save weights every 10 episodes
             agent.save(training_weights_file)
-        
-            if e != 0:
-                # Copy final map file to have a way of getting robot performance without being writing to file
-                copyfile("/tmp/ros_merge_map.pgm", results_dir + os.path.sep + "final-map-episode-{}.pgm".format(e))
+    
+        # Copy final map file to have a way of getting robot performance without being writing to file
+        copyfile("/tmp/ros_merge_map.pgm", results_dir + os.path.sep + "final-map-episode-{}.pgm".format(e))
 
     env.close()
     

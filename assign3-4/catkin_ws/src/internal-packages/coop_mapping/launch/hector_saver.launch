@@ -8,6 +8,7 @@
   <arg name="trajectory_publish_rate" default="0.25"/>
   <arg name="map_file_path" default="$(find hector_geotiff)/maps"/>
   <arg name="map_file_base_name" default="hector_slam_map"/>
+  <arg name="map_topic" default="/dynamic_map"/>
 
   <node pkg="hector_trajectory_server" type="hector_trajectory_server" name="hector_trajectory_server" output="screen">
     <param name="target_frame_name" type="string" value="/map" />
@@ -17,7 +18,7 @@
   </node>
 
   <node pkg="hector_geotiff" type="geotiff_node" name="hector_geotiff_node" output="screen" launch-prefix="nice -n 15">
-    <remap from="map" to="/dynamic_map" />
+    <remap from="map" to="$(arg map_topic)" />
     <param name="map_file_path" type="string" value="$(arg map_file_path)" />
     <param name="map_file_base_name" type="string" value="$(arg map_file_base_name)" />
     <param name="geotiff_save_period" type="double" value="0" />

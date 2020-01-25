@@ -1,0 +1,20 @@
+<launch>
+    <!-- TURTLEBOT3_0 -->
+    <arg name="first_tb3" default="tb3_0"/>
+
+    <!-- TURTLEBOT3_1 -->
+    <arg name="second_tb3" default="tb3_1"/>
+
+    <!-- Launch hector_saver for both robots. -->
+    <include file="$(find coop_mapping)/launch/hector_saver.launch" ns="$(arg first_tb3)">
+        <arg name="trajectory_source_frame_name" value="$(arg first_tb3)/base_link"/>
+        <arg name="map_file_base_name" value="hector_slam_map_$(arg first_tb3)"/>
+        <arg name="map_topic" value="/$(arg first_tb3)/dynamic_map"/>
+    </include>
+
+    <include file="$(find coop_mapping)/launch/hector_saver.launch" ns="$(arg second_tb3)">
+        <arg name="trajectory_source_frame_name" value="$(arg second_tb3)/base_link"/>
+        <arg name="map_file_base_name" value="hector_slam_map_$(arg second_tb3)"/>
+        <arg name="map_topic" value="/$(arg second_tb3)/dynamic_map"/>
+    </include>
+</launch>

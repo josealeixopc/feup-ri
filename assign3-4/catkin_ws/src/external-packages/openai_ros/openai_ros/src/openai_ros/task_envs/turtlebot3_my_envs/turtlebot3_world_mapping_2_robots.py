@@ -17,10 +17,12 @@ from openai_ros.openai_ros_common import ROSLauncher
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import OccupancyGrid
 
+# Utils
 from utils.pseudo_collision_detector import PseudoCollisionDetector
 from utils.image_similarity_ros import compare_current_map_to_actual_map
 from utils.relative_movement import get_robot_position_in_map
 from utils import scale 
+from utils import hector_path_save_publisher
 
 
 class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRobotsEnv):
@@ -144,7 +146,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
                                                     map_exploration_component_shape))
 
         self.observation_space = spaces.MultiDiscrete(
-            multi_discrete_shape)
+            laser_scan_component_shape)
 
         rospy.loginfo("ACTION SPACES TYPE===>"+str(self.action_space))
         rospy.loginfo("OBSERVATION SPACES TYPE===>" +
@@ -183,6 +185,11 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         self._map_merge_running = False
         self._map_merge_launch = None
 
+        self._hector_saver_launch_file = pkg_path + os.path.sep + \
+            'launch' + os.path.sep + 'init_2_robots_hector_saver.launch'
+        self._hector_saver_running = False
+        self._hector_saver_launch = None
+
         # Variables for map comparison
         self.map_data = None
         self.actual_map_file = "turtlebot3_world_map.pgm"
@@ -201,6 +208,9 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         # Start subscriber to /map to save it to file
         self._map_file_name = "/tmp/ros_merge_map"
         rospy.Subscriber('map', OccupancyGrid, self._map_callback)
+
+        # Logging episode information
+        self._first_episode = True
 
     ### OVERRIDES
 
@@ -226,9 +236,15 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
     def _init_env_variables(self):
         """
         Inits variables needed to be initialised each time we reset at the start
-        of an episode.
-        :return:
+        of an episode (when reset is called).
         """
+        # Save previous episode information before resetting. 
+        # Save only if it's not the first episode.
+        if not self._first_episode:
+            self.save_episode_info()
+
+        self._first_episode = False
+
         # For Info Purposes
         self.cumulated_reward = 0.0
 
@@ -244,9 +260,13 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         self._stop_gmapping()
         self._start_gmapping()
 
-        # Start MapMerge
+        # (Re)Start MapMerge
         self._stop_map_merge()
         self._start_map_merge()
+
+        # (Re)Start Hector Saver
+        self._stop_hector_saver()
+        self._start_hector_saver()
 
         # Set initial map difference
         # rospy.logwarn("Running initial map comparison.")
@@ -310,11 +330,10 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         for ns in self.robot_namespaces:
             # For each robot, we gather the laser_scan, position and rotation obs
             all_robots_observations.extend(self._get_laser_scan_obs(ns))
-            #all_robots_observations.extend(self._get_position_obs(ns))
-            #all_robots_observations.extend(self._get_rotation_obs(ns))
+            # all_robots_observations.extend(self._get_position_and_rotation_obs(ns))
 
         # The map_exploration obs is common to both robots
-        #all_robots_observations.extend(self._get_map_exploration_obs())
+        # all_robots_observations.extend(self._get_map_exploration_obs())
 
         rospy.loginfo("Observations from all robots==>" +
                       str(all_robots_observations))
@@ -416,6 +435,19 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
 
             self._gmapping_running = True
 
+    def _start_hector_saver(self):
+        if not self._hector_saver_running:
+            rospy.loginfo("Creating launch parent for Hector Saver launch file.")
+            uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
+            roslaunch.configure_logging(uuid)
+            self._hector_saver_launch = roslaunch.parent.ROSLaunchParent(
+                uuid, [self._hector_saver_launch_file])
+
+            self._hector_saver_launch.start()
+            rospy.loginfo("Started Hector Saver launch file.")
+
+            self._hector_saver_running = True
+
     def _stop_map_merge(self):
         if self._map_merge_running:
             self._map_merge_launch.shutdown()
@@ -429,6 +461,14 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
             rospy.loginfo("Stopped Gmapping launch file.")
 
             self._gmapping_running = False
+
+    def _stop_hector_saver(self):
+        if self._hector_saver_running:
+            self._hector_saver_launch.shutdown()
+            rospy.loginfo("Stopped Hector Saver launch file.")
+
+            self._hector_saver_running = False
+
 
     def _map_callback(self, map_data):
         # Based on this: https://github.com/ros-planning/navigation/blob/melodic-devel/map_server/src/map_saver.cpp
@@ -493,7 +533,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         # And we round it
         discretized_rot_z = np.rint(scaled_rot_z)
 
-        return discretized_pos_x, discretized_pos_y, discretized_rot_z
+        return [discretized_pos_x, discretized_pos_y, discretized_rot_z]
 
     def _discretize_map_exploration_observation(self, map_data):
         # We already do some work in the "simplify_occupancy_grid" function. 
@@ -503,7 +543,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         scaled_map_data = scale.scale_arr(simplified_map_data, 0, 1, 0, self.simplified_grid_max_value - self.simplified_grid_min_value)
         discretized_map_data = np.rint(scaled_map_data)
 
-        return discretized_map_data
+        return discretized_map_data.tolist()
 
 
     def _get_laser_scan_obs(self, namespace):
@@ -540,6 +580,23 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
             self.current_max_explored_area = explored_area
 
     ### LOGGING RELATED METHODS
+
+    def save_episode_info(self):
+
+        # TODO: fix this
+        # **WARNING**: hector_path_save must allow some time for the ROS service to execute
+        # careful when moving this around, to keep the sleep
+
+        # Save trajectory of the robots
+        for ns in self.robot_namespaces:
+            hector_path_save_publisher.publish_once(ns)
+
+        # Becaseu hector_saver needs some time to run, before we delete its nodes
+        rospy.sleep(1)
+
+        # Save current map representation as an image
+        self._save_map_image(self.map_data)
+
 
     def _save_map_image(self, map_data):
         # Open a tmp file to avoid racing condition
