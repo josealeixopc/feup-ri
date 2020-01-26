@@ -65,7 +65,7 @@ def simplify_occupancy_grid(map_data, dim=4):
     # decrease size of 2D array by summing/averaging neighbor cells
     binned_data = bin_ndarray(reshaped_data, (dim, dim), operation='mean')
 
-    return binned_data
+    return binned_data.flatten()
 
 
 def callback(map_data):

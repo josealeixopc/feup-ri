@@ -21,8 +21,7 @@ from nav_msgs.msg import OccupancyGrid
 from utils.pseudo_collision_detector import PseudoCollisionDetector
 from utils.image_similarity_ros import compare_current_map_to_actual_map
 from utils.relative_movement import get_robot_position_in_map
-from utils import scale 
-from utils import hector_path_save_publisher
+from utils import scale, hector_path_save_publisher, simplify_occupancy_grid
 
 
 class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRobotsEnv):
@@ -138,7 +137,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
             self.rotation_max_value - self.rotation_min_value] * (1 * self.number_robots)
 
         map_exploration_component_shape = [
-            self.simplified_grid_max_value - self.simplified_grid_min_value]
+            self.simplified_grid_max_value - self.simplified_grid_min_value] * self.simplified_grid_dimension * self.simplified_grid_dimension
 
         multi_discrete_shape = list(itertools.chain(laser_scan_component_shape,
                                                     position_component_shape,
@@ -146,7 +145,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
                                                     map_exploration_component_shape))
 
         self.observation_space = spaces.MultiDiscrete(
-            laser_scan_component_shape)
+            multi_discrete_shape)
 
         rospy.loginfo("ACTION SPACES TYPE===>"+str(self.action_space))
         rospy.loginfo("OBSERVATION SPACES TYPE===>" +
@@ -216,7 +215,8 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
 
     def step(self, action):
         if os.environ.get('STEP_DEBUG') != None:
-            sys.stderr.write("Waiting for permission to do next step... Press a key and ENTER: ")
+            sys.stderr.write(
+                "Waiting for permission to do next step... Press a key and ENTER: ")
             raw_input()
 
         return super(TurtleBot3WorldMapping2RobotsEnv, self).step(action)
@@ -238,7 +238,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         Inits variables needed to be initialised each time we reset at the start
         of an episode (when reset is called).
         """
-        # Save previous episode information before resetting. 
+        # Save previous episode information before resetting.
         # Save only if it's not the first episode.
         if not self._first_episode:
             self.save_episode_info()
@@ -330,10 +330,10 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         for ns in self.robot_namespaces:
             # For each robot, we gather the laser_scan, position and rotation obs
             all_robots_observations.extend(self._get_laser_scan_obs(ns))
-            # all_robots_observations.extend(self._get_position_and_rotation_obs(ns))
+            all_robots_observations.extend(self._get_position_and_rotation_obs(ns))
 
         # The map_exploration obs is common to both robots
-        # all_robots_observations.extend(self._get_map_exploration_obs())
+        all_robots_observations.extend(self._get_map_exploration_obs())
 
         rospy.loginfo("Observations from all robots==>" +
                       str(all_robots_observations))
@@ -437,7 +437,8 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
 
     def _start_hector_saver(self):
         if not self._hector_saver_running:
-            rospy.loginfo("Creating launch parent for Hector Saver launch file.")
+            rospy.loginfo(
+                "Creating launch parent for Hector Saver launch file.")
             uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
             roslaunch.configure_logging(uuid)
             self._hector_saver_launch = roslaunch.parent.ROSLaunchParent(
@@ -468,7 +469,6 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
             rospy.loginfo("Stopped Hector Saver launch file.")
 
             self._hector_saver_running = False
-
 
     def _map_callback(self, map_data):
         # Based on this: https://github.com/ros-planning/navigation/blob/melodic-devel/map_server/src/map_saver.cpp
@@ -516,19 +516,22 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         # We are only interested in pos_x and pos_y (pos_z should be constant)
         # We rescale both values from an assumed scale of -10 to 10 (we clip them), to a new scale 0 to (max-min) values
         clipped_pos_x, clipped_pos_y = np.clip([pos_x, pos_y], -10, 10)
-        scaled_pos_x = scale.scale_scalar(clipped_pos_x, -10, 10, 0, self.position_max_value, self.position_min_value)
-        scaled_pos_y = scale.scale_scalar(clipped_pos_y, -10, 10, 0, self.position_max_value, self.position_min_value)
+        scaled_pos_x = scale.scale_scalar(
+            clipped_pos_x, -10, 10, 0, self.position_max_value - self.position_min_value)
+        scaled_pos_y = scale.scale_scalar(
+            clipped_pos_y, -10, 10, 0, self.position_max_value - self.position_min_value)
 
         # And we round the values
         discretized_pos_x = np.rint(scaled_pos_x)
         discretized_pos_y = np.rint(scaled_pos_y)
 
-        # We are only interested in rot_z (rot_x and rot_y should be constant). 
+        # We are only interested in rot_z (rot_x and rot_y should be constant).
         # We convert it so that it gives us the positive angle of rotation (between 0 and 2pi).
         rot_z = rot_z % (2 * np.pi)
-        
+
         # Now we rescale it to a scale from 0 to (max-min) values.
-        scaled_rot_z = scale.scale_scalar(rot_z, 0, 2*np.pi, 0, self.rotation_max_value - self.rotation_min_value)
+        scaled_rot_z = scale.scale_scalar(
+            rot_z, 0, 2*np.pi, 0, self.rotation_max_value - self.rotation_min_value)
 
         # And we round it
         discretized_rot_z = np.rint(scaled_rot_z)
@@ -536,28 +539,31 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         return [discretized_pos_x, discretized_pos_y, discretized_rot_z]
 
     def _discretize_map_exploration_observation(self, map_data):
-        # We already do some work in the "simplify_occupancy_grid" function. 
+        # We already do some work in the "simplify_occupancy_grid" function.
         # Here we just want to rescale and round the values to fit our observation space.
-        simplified_map_data = simplify_occupancy_grid(map_data, self.simplified_grid_dimension)
+        simplified_map_data = simplify_occupancy_grid.simplify_occupancy_grid(
+            map_data, self.simplified_grid_dimension)
 
-        scaled_map_data = scale.scale_arr(simplified_map_data, 0, 1, 0, self.simplified_grid_max_value - self.simplified_grid_min_value)
+        scaled_map_data = scale.scale_arr(
+            simplified_map_data, 0, 1, 0, self.simplified_grid_max_value - self.simplified_grid_min_value)
         discretized_map_data = np.rint(scaled_map_data)
 
         return discretized_map_data.tolist()
 
-
     def _get_laser_scan_obs(self, namespace):
         laser_scan = self.laser_scan[namespace]
         return self._discretize_laser_scan_observation(laser_scan, self.new_ranges)
-        
 
     def _get_position_and_rotation_obs(self, namespace):
         position, rotation = get_robot_position_in_map(namespace)
         return self._discretize_position_and_rotation_observation(position, rotation)
-    
-    def _get_map_exploration_obs(self):
-        return _discretize_map_exploration_observation(self.map_data)
 
+    def _get_map_exploration_obs(self):
+        rate = rospy.Rate(10) # 10Hz
+        while(self.map_data is None):
+            rate.sleep()    # Wait for map data to become available
+
+        return self._discretize_map_exploration_observation(self.map_data)
 
     ### REWARD RELATED METHODS
 
@@ -596,7 +602,6 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
 
         # Save current map representation as an image
         self._save_map_image(self.map_data)
-
 
     def _save_map_image(self, map_data):
         # Open a tmp file to avoid racing condition

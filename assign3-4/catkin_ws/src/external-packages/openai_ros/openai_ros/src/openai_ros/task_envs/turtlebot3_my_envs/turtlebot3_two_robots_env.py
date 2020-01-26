@@ -1,6 +1,6 @@
 import numpy
 import rospy
-from openai_ros import robot_gazebo_env
+from openai_ros import my_robot_gazebo_env
 from std_msgs.msg import Float64
 from sensor_msgs.msg import JointState
 from sensor_msgs.msg import Image
@@ -11,7 +11,7 @@ from geometry_msgs.msg import Twist
 from openai_ros.openai_ros_common import ROSLauncher
 
 
-class TurtleBot3TwoRobotsEnv(robot_gazebo_env.RobotGazeboEnv):
+class TurtleBot3TwoRobotsEnv(my_robot_gazebo_env.MyRobotGazeboEnv):
     """Superclass for all CubeSingleDisk environments.
     """
 

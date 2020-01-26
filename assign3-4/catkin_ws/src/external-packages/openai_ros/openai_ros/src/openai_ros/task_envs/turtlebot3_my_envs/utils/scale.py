@@ -20,11 +20,13 @@ def scale_scalar(scalar, min_value, max_value, new_min_value, new_max_value):
     Returns:
         The value adusted to the new scale.
     """
-    return (m - min_value) / (max_value - min_value) * (new_max_value - new_min_value) + new_min_value
+    return (scalar - min_value) / (max_value - min_value) * (new_max_value - new_min_value) + new_min_value
 
 def scale_arr(ndarr, min_value, max_value, new_min_value, new_max_value):
     new_ndarr = np.copy(ndarr)
 
-    with np.nditer(map_data_arr, op_flags=['readwrite']) as it:
+    with np.nditer(ndarr, op_flags=['readwrite']) as it:
         for x in it:
             x[...] = scale_scalar(x, min_value, max_value, new_min_value, new_max_value)
+
+    return ndarr
