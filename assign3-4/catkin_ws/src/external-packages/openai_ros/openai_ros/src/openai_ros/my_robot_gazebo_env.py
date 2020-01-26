@@ -48,12 +48,11 @@ class MyRobotGazeboEnv(gym.Env):
         self._set_action(action)
         # self.gazebo.pauseSim() # original
         obs = self._get_obs()
-        self.gazebo.pauseSim() # custom
         done = self._is_done(obs)
         info = {}
         reward = self._compute_reward(obs, done)
         self.cumulated_episode_reward += reward
-
+        self.gazebo.pauseSim() # custom
         rospy.logdebug("END STEP OpenAIROS")
 
         return obs, reward, done, info
