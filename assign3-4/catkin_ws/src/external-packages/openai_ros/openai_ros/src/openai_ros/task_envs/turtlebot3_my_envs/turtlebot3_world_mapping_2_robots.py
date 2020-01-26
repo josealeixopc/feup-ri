@@ -243,10 +243,13 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         # For Info Purposes
         self.cumulated_reward = 0.0
 
+        # Accuracy
         self.current_min_map_difference = 1
 
+        # Exploration
         self.previous_max_explored_area = 0
         self.current_max_explored_area = 0
+        self.map_data = None
 
         # Set to false Done, because its calculated asyncronously
         self._episode_done = False
@@ -312,6 +315,25 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         Here we define the observation.
         """
         rospy.loginfo("Start Get Observation ==>")
+        # Set stuff for the reward calculation
+        # Set the exploration values (wait for map to be available)
+        while self.map_data is None:
+            rospy.sleep(0.1)
+
+        self._calculate_map_exploration(self.map_data)
+
+        # Set the accuracy values
+        # Maximum value for difference is 1. Lowest (and best) is 0.
+        new_map_difference = compare_current_map_to_actual_map(
+            self._map_file_name, self.actual_map_file)
+
+        # In case the map_difference wrongfully goes up, we keep our best difference    
+        self.new_min_map_difference = min(
+            new_map_difference, self.current_min_map_difference)
+
+        self.current_min_map_difference = self.new_min_map_difference
+
+        # Now we gather the observations
         all_robots_observations = []
 
         for ns in self.robot_namespaces:
@@ -344,40 +366,18 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         """
         rospy.logwarn("Running map comparison...")
 
-        # Maximum value for difference is 1. Lowest (and best) is 0.
-        new_map_difference = compare_current_map_to_actual_map(
-            self._map_file_name, self.actual_map_file)
-
-        # In case the map_difference wrongfully goes up, we keep our best difference    
-        new_min_map_difference = min(
-            new_map_difference, self.current_min_map_difference)
-
         # If we decrease the map difference, it should be rewarded.
-        accuracy_reward_base = self.current_min_map_difference - new_min_map_difference
+        accuracy_reward_base = self.current_min_map_difference - self.new_min_map_difference
         accuracy_reward_weight = 0.3
 
         # Maximum possible explored area is the area of our map, so we normalize what we have explored, to be between 0 and 1.
-        self._calculate_map_exploration(self.map_data)
         area_reward_base = (self.current_max_explored_area - self.previous_max_explored_area) * 1.0 / (self.map_data.info.width * self.map_data.info.height)
-        area_reward_weight = 0.7
-
-        # # If the new difference is big, it's possibly a bug because of delay in starting /map topic
-        # if accuracy_reward > 0.5:
-        #     accuracy_reward = 0
-
-        # # Similar to what is above
-        # if area_reward > 1000:
-        #     area_reward = 0
-
-        rospy.logwarn("Old map dif - new map dif: {}-{} = {}".format(self.current_min_map_difference,
-                                                                     new_min_map_difference, self.current_min_map_difference - new_min_map_difference))
+        area_reward_weight = 0.7 * self.exploration_multi_factor
 
         if not done:
             reward = self.no_crash_reward_points + accuracy_reward_base * accuracy_reward_weight + area_reward_base * area_reward_weight
         else:
             reward = self.crash_reward_points
-
-        self.current_min_map_difference = new_min_map_difference
 
         rospy.loginfo("reward=" + str(reward))
         self.cumulated_reward += reward

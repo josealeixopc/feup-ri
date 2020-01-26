@@ -1,5 +1,6 @@
 import os
 import cv2
+import ntpath
 
 import subprocess, threading
 import image_similarity
@@ -9,8 +10,12 @@ import roslaunch
 import rospy
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
-images_relative_dir = "image_examples"
+images_relative_dir = "images"
 images_abs_dir = script_dir + os.path.sep + images_relative_dir
+
+def path_leaf(path):
+    head, tail = ntpath.split(path)
+    return tail or ntpath.basename(head)
 
 class Command(object):
     def __init__(self, cmd):
@@ -108,7 +113,7 @@ def fill(data, start_coords, fill_value, border_value, connectivity=8):
     
     return filled_data, borders
 
-def compare_current_map_to_actual_map(current_map_file_location, actual_map_file):
+def compare_current_map_to_actual_map(current_map_file_location, walkable_map_file):
     """
     Runs the map_server command to save the current image of the map runs comparison between the current
     robot's image and the actual map.
@@ -116,52 +121,63 @@ def compare_current_map_to_actual_map(current_map_file_location, actual_map_file
     Returns a float which represents the difference between the maps. A LOWER VALUE means the images are MORE SIMILAR.
     """
 
-    actual_map_file_location = images_abs_dir + os.path.sep + actual_map_file
+    walkable_map_file_location = images_abs_dir + os.path.sep + walkable_map_file
 
     # If map_saver could not save a map, return maximum difference
     if not os.path.exists(current_map_file_location + ".pgm"):
         return 1
 
     current_map_image = cv2.imread(current_map_file_location + ".pgm", cv2.IMREAD_GRAYSCALE)
-    actual_map_image = cv2.imread(actual_map_file_location, cv2.IMREAD_GRAYSCALE)
+    walkable_map_image = cv2.imread(walkable_map_file_location, cv2.IMREAD_GRAYSCALE)
 
     # Rotate 90 degrees to the left by rotating 3 times to the right
     current_map_image = np.rot90(current_map_image, k=3)
-    
-    # Resize for test purposes 
-    actual_map_image = cv2.resize(actual_map_image, (500, 500))
-    # actual_map_image = cv2.cvtColor(actual_map_image, cv2.COLOR_BGR2GRAY)
 
-    h, w = actual_map_image.shape[:2]
+    # Convert current estimate to binary
+    current_walkable_map = ((current_map_image==254) * 255).astype(np.uint8)
+
+    # Cropping final images
+    x1, y1, w1, h1 = cv2.boundingRect(current_walkable_map)
+    current_walkable_map = current_walkable_map[y1:y1+h1, x1:x1+w1]
+
+    x2, y2, w2, h2 = cv2.boundingRect(walkable_map_image)
+    walkable_map_image = cv2.resize(walkable_map_image[y2:y2+h2, x2:x2+w2], (h1, w1))
+
+    # cv2.imshow("Current", current_walkable_map)
+    # cv2.imshow("Actual", walkable_map_image)
+    # cv2.waitKey(0)
+
+    # compare_images returns a value between 0 and 1, but may return 1000, so we choose the min of the two
+    image_diff = min(1, image_similarity.my_compare_images(walkable_map_image, current_walkable_map)) 
+    return image_diff
+
+def generate_walkable_area_image(actual_map_file, floodfill_x, floodfill_y, map_width=384, map_height=384):
+    actual_map_image = cv2.imread(actual_map_file, cv2.IMREAD_GRAYSCALE)
     
     # Get the borders of the area inside the map
     # Floodfill actual map area with value 128, i.e. mid-grey. 
     # Some pixels may have darker colors, so I went with 50.
     floodval = 50
-    cv2.floodFill(actual_map_image, None, (h/2 + 10, w/2 + 10), floodval)
+    cv2.floodFill(actual_map_image, None, (floodfill_x, floodfill_y), floodval)
 
     # Extract filled area alone
     walkable_map = ((actual_map_image==floodval) * 255).astype(np.uint8)
 
-    # Find edges of flooded area (walkable_map)
-    walkable_map_edges = cv2.Canny(walkable_map, 100, 200)
+    cv2.imshow("Walkable", cv2.resize(walkable_map, (500, 500), interpolation = cv2.INTER_NEAREST))
 
-    # Find black lines (edges) of the current map, but don't build contour
-    current_map_edges = current_map_image.copy()
-    current_map_edges[current_map_edges > 0] = 255
-    current_map_edges = cv2.bitwise_not(current_map_edges)
+    x, y, w, h = cv2.boundingRect(walkable_map)
 
-    # Cropping final images
-    x, y, w, h = cv2.boundingRect(current_map_edges)
-    current_map_edges = current_map_edges[y:y+h, x:x+w]
+    cropped_walkable_map = cv2.resize(walkable_map[y:y+h, x:x+w], (map_height, map_width), interpolation = cv2.INTER_NEAREST)
 
-    x, y, w, h = cv2.boundingRect(walkable_map_edges)
-    walkable_map_edges = walkable_map_edges[y:y+h, x:x+w]
+    cv2.imshow("Flooded", cv2.resize(actual_map_image, (500, 500), interpolation = cv2.INTER_NEAREST))
 
-    # compare_images returns a value between 0 and 1, but may return 1000, so we choose the min of the two
-    image_diff = min(1, image_similarity.my_compare_images(walkable_map_edges, current_map_edges)) 
-    return image_diff
+    cv2.imshow("Cropped Walkable Map", cropped_walkable_map)
+    cv2.waitKey(0)
+    
+    filename, file_extension = os.path.splitext(path_leaf(actual_map_file))
+    cv2.imwrite(images_abs_dir + os.path.sep + filename + "_walkable.pgm", cropped_walkable_map)
 
 if __name__ == "__main__":
     current_map_file_location = "/tmp/ros_merge_map"
-    print("Image difference: {}".format(compare_current_map_to_actual_map(current_map_file_location, "turtlebot3_world_map.pgm")))
+    print("Image difference: {}".format(compare_current_map_to_actual_map(current_map_file_location, "turtlebot3_world_map_walkable.pgm")))
+    # generate_walkable_area_image("/home/jazz/Projects/FEUP/ProDEI/feup-ri/assign3-4/catkin_ws/src/external-packages/openai_ros/openai_ros/src/openai_ros/task_envs/turtlebot3_my_envs/utils/images/house-1.pgm", 1450, 1700)
