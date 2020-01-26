@@ -353,30 +353,40 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
     def _compute_reward(self, observations, done):
         """
         The current reward depends only on the first robot!
+
+        Compute reward. The step reward is a value between -1 and 1.
         """
         rospy.logwarn("Running map comparison...")
+
+        # Maximum value for difference is 1. Lowest (and best) is 0.
         new_map_difference = compare_current_map_to_actual_map(
             self._map_file_name, self.actual_map_file)
+
+        # In case the map_difference wrongfully goes up, we keep our best difference    
         new_min_map_difference = min(
             new_map_difference, self.current_min_map_difference)
 
-        accuracy_reward = self.current_min_map_difference - new_min_map_difference
-        area_reward = self.current_max_explored_area - self.previous_max_explored_area
+        # If we decrease the map difference, it should be rewarded.
+        accuracy_reward_base = self.current_min_map_difference - new_min_map_difference
+        accuracy_reward_weight = 0.3
 
-        # If the new difference is big, it's possibly a bug because of delay in starting /map topic
-        if accuracy_reward > 0.5:
-            accuracy_reward = 0
+        # Maximum possible explored area is the area of our map, so we normalize what we have explored, to be between 0 and 1.
+        area_reward_base = (self.current_max_explored_area - self.previous_max_explored_area)/ (self.map_data.info.width * self.map_data.info.height)
+        area_reward_weight = 0.7
 
-        # Similar to what is above
-        if area_reward > 1000:
-            area_reward = 0
+        # # If the new difference is big, it's possibly a bug because of delay in starting /map topic
+        # if accuracy_reward > 0.5:
+        #     accuracy_reward = 0
+
+        # # Similar to what is above
+        # if area_reward > 1000:
+        #     area_reward = 0
 
         rospy.logwarn("Old map dif - new map dif: {}-{} = {}".format(self.current_min_map_difference,
                                                                      new_min_map_difference, self.current_min_map_difference - new_min_map_difference))
 
         if not done:
-            reward = self.no_crash_reward_points + accuracy_reward * \
-                self.exploration_multi_factor + area_reward
+            reward = self.no_crash_reward_points + accuracy_reward_base * accuracy_reward_weight + area_reward_base * area_reward_weight
         else:
             reward = self.crash_reward_points
 
