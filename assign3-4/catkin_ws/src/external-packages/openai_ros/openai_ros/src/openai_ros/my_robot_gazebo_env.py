@@ -9,7 +9,7 @@ from openai_ros.msg import RLExperimentInfo
 # https://github.com/openai/gym/blob/master/gym/core.py
 class MyRobotGazeboEnv(gym.Env):
 
-    def __init__(self, robot_name_space, controllers_list, reset_controls, start_init_physics_parameters=True, reset_world_or_sim="SIMULATION"):
+    def __init__(self, robot_name_space, controllers_list, reset_controls, start_init_physics_parameters=True, reset_world_or_sim="WORLD"):
 
         # To reset Simulations
         rospy.logdebug("START init RobotGazeboEnv")
