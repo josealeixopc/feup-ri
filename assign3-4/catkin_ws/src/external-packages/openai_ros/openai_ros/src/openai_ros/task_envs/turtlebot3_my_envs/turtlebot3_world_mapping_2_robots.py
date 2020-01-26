@@ -191,7 +191,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
 
         # Variables for map comparison
         self.map_data = None
-        self.actual_map_file = "turtlebot3_world_map.pgm"
+        self.actual_map_file = "turtlebot3_world_map_walkable.pgm"
 
         # The minimum difference that has been observed
         self.current_min_map_difference = None
