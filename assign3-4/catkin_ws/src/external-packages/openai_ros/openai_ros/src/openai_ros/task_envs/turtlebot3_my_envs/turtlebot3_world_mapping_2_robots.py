@@ -19,7 +19,7 @@ from nav_msgs.msg import OccupancyGrid
 
 # Utils
 from utils.pseudo_collision_detector import PseudoCollisionDetector
-from utils.image_similarity_ros import compare_current_map_to_actual_map
+from utils.image_similarity_ros import compare_current_map_to_actual_map, get_number_of_almost_white_pixels
 from utils.relative_movement import get_robot_position_in_map
 from utils import scale, hector_path_save_publisher, simplify_occupancy_grid
 
@@ -192,6 +192,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         # Variables for map comparison
         self.map_data = None
         self.actual_map_file = "turtlebot3_world_map_walkable.pgm"
+        self._num_white_pixels_to_explore = get_number_of_almost_white_pixels(self.actual_map_file)
 
         # The minimum difference that has been observed
         self.current_min_map_difference = None
@@ -253,6 +254,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
 
         # Set to false Done, because its calculated asyncronously
         self._episode_done = False
+        self._crashed = False
 
         # (Re)Start GMapping, MapMerge and HectorSaver
         self._stop_gmapping()
@@ -358,6 +360,11 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         else:
             rospy.loginfo("No TurtleBot3 is close to a wall ==>")
 
+        # If the robot has mapped 90% of the estimated area
+        if self.current_max_explored_area >= 0.9 * self._num_white_pixels_to_explore:
+            self._episode_done = True
+            rospy.logerr("Turtlebots have mapped 80 percent of the area.")
+
         return self._episode_done
 
     def _compute_reward(self, observations, done):
@@ -374,9 +381,12 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         area_reward_weight = 1.0
 
         if not done:
-            reward = (area_reward_base * area_reward_weight) * accuracy_reward_base
+            reward = (area_reward_base * area_reward_weight) * accuracy_reward_base - self.no_crash_reward_points
         else:
-            reward = 0
+            if self._crashed:
+                reward = -100
+            else:
+                reward = 0
 
         rospy.loginfo("reward=" + str(reward))
         self.cumulated_reward += reward

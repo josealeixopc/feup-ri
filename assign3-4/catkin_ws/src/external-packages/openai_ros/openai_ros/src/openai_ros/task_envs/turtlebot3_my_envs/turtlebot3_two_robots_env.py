@@ -80,7 +80,10 @@ class TurtleBot3TwoRobotsEnv(my_robot_gazebo_env.MyRobotGazeboEnv):
             self._check_publishers_connection(ns)
 
         self.gazebo.pauseSim()
-        
+
+        # Variable for crash
+        self._crashed = False
+
         rospy.loginfo("Finished TurtleBot3TwoRobotsEnv INIT...")
 
     # Methods needed by the RobotGazeboEnv
@@ -278,6 +281,7 @@ class TurtleBot3TwoRobotsEnv(my_robot_gazebo_env.MyRobotGazeboEnv):
             if self.check_if_crashed(namespace):
                 rospy.logerr("{} has crashed while trying to achieve Twist.".format(namespace))
                 self._episode_done = True
+                self._crashed = True
                 break
 
             rospy.loginfo("{} is not there yet, keep waiting...".format(namespace))

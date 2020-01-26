@@ -177,7 +177,14 @@ def generate_walkable_area_image(actual_map_file, floodfill_x, floodfill_y, map_
     filename, file_extension = os.path.splitext(path_leaf(actual_map_file))
     cv2.imwrite(images_abs_dir + os.path.sep + filename + "_walkable.pgm", cropped_walkable_map)
 
+def get_number_of_almost_white_pixels(image_file):
+    file_location = images_abs_dir + os.path.sep + image_file
+
+    image = cv2.imread(file_location, cv2.IMREAD_GRAYSCALE)
+    return np.sum(image >= 250)
+
 if __name__ == "__main__":
-    current_map_file_location = "/tmp/ros_merge_map"
-    print("Image difference: {}".format(compare_current_map_to_actual_map(current_map_file_location, "turtlebot3_world_map_walkable.pgm")))
+    # current_map_file_location = "/tmp/ros_merge_map"
+    # print("Image difference: {}".format(compare_current_map_to_actual_map(current_map_file_location, "turtlebot3_world_map_walkable.pgm")))
     # generate_walkable_area_image("/home/jazz/Projects/FEUP/ProDEI/feup-ri/assign3-4/catkin_ws/src/external-packages/openai_ros/openai_ros/src/openai_ros/task_envs/turtlebot3_my_envs/utils/images/house-1.pgm", 1450, 1700)
+    print(get_number_of_almost_white_pixels("turtlebot3_world_map_walkable.pgm"))
