@@ -357,7 +357,8 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         accuracy_reward_weight = 0.3
 
         # Maximum possible explored area is the area of our map, so we normalize what we have explored, to be between 0 and 1.
-        area_reward_base = (self.current_max_explored_area - self.previous_max_explored_area)/ (self.map_data.info.width * self.map_data.info.height)
+        self._calculate_map_exploration(self.map_data)
+        area_reward_base = (self.current_max_explored_area - self.previous_max_explored_area) * 1.0 / (self.map_data.info.width * self.map_data.info.height)
         area_reward_weight = 0.7
 
         # # If the new difference is big, it's possibly a bug because of delay in starting /map topic
@@ -495,13 +496,13 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
                 else:
                     discretized_ranges.append(int(item))
 
-            if (self.min_range > item > 0):
-                rospy.logerr("done Validation >>> item=" +
-                             str(item)+"< "+str(self.min_range))
-                self._episode_done = True
-            else:
-                rospy.loginfo("NOT done Validation >>> item=" +
-                              str(item)+"< "+str(self.min_range))
+                if (self.min_range > item > 0):
+                    rospy.logerr("done Validation >>> item=" +
+                                str(item)+"< "+str(self.min_range))
+                    self._episode_done = True
+                else:
+                    rospy.loginfo("NOT done Validation >>> item=" +
+                                str(item)+"< "+str(self.min_range))
 
         return discretized_ranges
 
@@ -574,7 +575,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
             for x in range(map_data.info.width):
                 i = x + (map_data.info.height - y - 1) * map_data.info.width
 
-                if map_data.data[i] >= 0 and map_data.data[i] <= self.threshold_free:
+                if map_data.data[i] >= 0:
                     explored_area += 1
 
         if explored_area >= self.current_max_explored_area:

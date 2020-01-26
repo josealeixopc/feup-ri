@@ -15,6 +15,12 @@
             "name": "ROS: Attach",
             "type": "ros",
             "request": "attach"
+        },
+        {
+            "name": "ROS: Launch start_training",
+            "type": "ros",
+            "request": "launch",
+            "target": "/home/jazz/Projects/FEUP/ProDEI/feup-ri/assign3-4/catkin_ws/src/internal-packages/coop_mapping/launch/start_training_2_robots_dqn.launch"
         }
     ]
 }

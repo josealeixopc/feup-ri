@@ -21,7 +21,7 @@ import numpy as np
 
 VS_ROS_DEBUG = 0
 ENV_NAME = 'TurtleBot3WorldMapping2Robots-v0'
-EPISODES = 10000
+EPISODES = 1000
 MAX_EPISODE_STEPS = 1000
 
 ENV_VALUES = ['dev-no-gazebo', 'dev-gazebo', 'deploy']
