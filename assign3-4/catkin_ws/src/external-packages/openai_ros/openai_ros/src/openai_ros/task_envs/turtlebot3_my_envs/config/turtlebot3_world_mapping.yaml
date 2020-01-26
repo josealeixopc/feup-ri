@@ -23,7 +23,7 @@ turtlebot3: #namespace
 
     # My rewards
     no_crash_reward_points: -0.05 # Reward for not crashing. Negative reward so they are incentivized to explore.
-    crash_reward_points: -100 # Reward for crashing (ending an episode)
+    crash_reward_points: -1 # Reward for crashing (ending an episode)
     exploration_multi_factor: 10000 # Number by which we multiply the increase in area explored (difference between the previous image similiarity and the current one)
     
 

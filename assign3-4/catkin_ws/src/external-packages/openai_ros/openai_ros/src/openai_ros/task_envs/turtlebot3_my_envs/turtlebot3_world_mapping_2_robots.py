@@ -238,11 +238,6 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         Inits variables needed to be initialised each time we reset at the start
         of an episode (when reset is called).
         """
-        # Save previous episode information before resetting.
-        # Save only if it's not the first episode.
-        if not self._first_episode:
-            self.save_episode_info()
-
         self._first_episode = False
 
         # For Info Purposes
@@ -256,22 +251,14 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         # Set to false Done, because its calculated asyncronously
         self._episode_done = False
 
-        # (Re)Start GMapping
+        # (Re)Start GMapping, MapMerge and HectorSaver
         self._stop_gmapping()
-        self._start_gmapping()
-
-        # (Re)Start MapMerge
         self._stop_map_merge()
-        self._start_map_merge()
-
-        # (Re)Start Hector Saver
         self._stop_hector_saver()
-        self._start_hector_saver()
 
-        # Set initial map difference
-        # rospy.logwarn("Running initial map comparison.")
-        # self.current_min_map_difference = compare_current_map_to_actual_map(self.actual_map_file)
-        # rospy.logwarn("Initial map difference: {}".format(self.current_min_map_difference))
+        self._start_gmapping()
+        self._start_map_merge()
+        self._start_hector_saver()
 
     def _set_action(self, action):
         """
@@ -345,6 +332,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
 
         if self._episode_done:
             rospy.logerr("A TurtleBot3 is Too Close to wall==>")
+            self.save_episode_info()
         else:
             rospy.loginfo("No TurtleBot3 is close to a wall ==>")
 
@@ -352,8 +340,6 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
 
     def _compute_reward(self, observations, done):
         """
-        The current reward depends only on the first robot!
-
         Compute reward. The step reward is a value between -1 and 1.
         """
         rospy.logwarn("Running map comparison...")

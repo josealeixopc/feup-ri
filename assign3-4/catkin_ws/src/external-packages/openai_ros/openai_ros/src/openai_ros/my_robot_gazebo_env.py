@@ -61,9 +61,9 @@ class MyRobotGazeboEnv(gym.Env):
     def reset(self):
         rospy.logdebug("Reseting RobotGazeboEnvironment")
         self._reset_sim()
+        self.gazebo.unpauseSim() # added line to allow transforms and map information to be loaded
         self._init_env_variables()
         self._update_episode()
-        self.gazebo.unpauseSim() # added line to allow transforms and map information to be loaded
         obs = self._get_obs()
         self.gazebo.pauseSim() # added line
         rospy.logdebug("END Reseting RobotGazeboEnvironment")
