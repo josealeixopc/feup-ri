@@ -32,7 +32,14 @@ def get_robot_position_in_map(namespace=""):
         if position != None and quaternion != None:
             break
 
-    return position, tf.transformations.euler_from_quaternion(quaternion)
+    rotation = None
+
+    try:
+        rotation = tf.transformations.euler_from_quaternion(quaternion)
+    except:
+        rotation = [0, 0, 0]
+
+    return position, rotation
 
 if __name__ == "__main__":
     rospy.init_node('relative_movement_py')
