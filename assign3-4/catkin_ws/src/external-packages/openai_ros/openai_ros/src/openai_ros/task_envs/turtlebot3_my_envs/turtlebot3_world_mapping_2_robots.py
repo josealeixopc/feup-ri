@@ -528,6 +528,10 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         return discretized_ranges
 
     def _discretize_position_and_rotation_observation(self, position, rotation):
+        if position is None:
+            position = [0, 0, 0]
+        if rotation is None:
+            rotation = [0, 0, 0]
         pos_x, pos_y, pos_z = position  # in meters
         rot_x, rot_y, rot_z = rotation  # in radians
 
