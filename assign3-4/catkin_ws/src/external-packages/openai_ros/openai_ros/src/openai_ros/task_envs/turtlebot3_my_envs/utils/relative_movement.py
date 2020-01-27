@@ -17,11 +17,13 @@ def get_robot_position_in_map(namespace=""):
     my_base_link = namespace + "/base_link"
     my_map = "/map"
 
+    t = rospy.Time(0)
+
     position = None
     quaternion = None    
 
-    tf_listener.waitForTransform(my_map, my_base_link, rospy.Time(0), rospy.Duration(3.0))
-    position, quaternion = tf_listener.lookupTransform(my_map, my_base_link, rospy.Time(0))
+    tf_listener.waitForTransform(my_map, my_base_link, t, rospy.Duration(3.0))
+    position, quaternion = tf_listener.lookupTransform(my_map, my_base_link, t)
 
     return position, tf.transformations.euler_from_quaternion(quaternion)
 
