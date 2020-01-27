@@ -22,8 +22,8 @@ turtlebot3: #namespace
     end_episode_points: 200 # Points given when ending an episode
 
     # My rewards
-    no_crash_reward_points: -10 # Reward for not crashing. Negative reward so they are incentivized to explore.
-    crash_reward_points: -100000 # Reward for crashing (ending an episode)
+    no_crash_reward_points: 10 # Reward for not crashing. Negative reward so they are incentivized to explore.
+    crash_reward_points: 10000 # Reward for crashing (ending an episode)
     exploration_multi_factor: 100 # Number by which we multiply the increase in area explored (difference between the previous image similiarity and the current one)
     
 

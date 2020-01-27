@@ -395,7 +395,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
             reward = area_reward_base * area_reward_weight - self.no_crash_reward_points
         else:
             if self._crashed:
-                reward = -100
+                reward = - self.crash_reward_points
             else:
                 reward = 0
 
