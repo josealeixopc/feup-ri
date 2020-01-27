@@ -18,15 +18,10 @@ def get_robot_position_in_map(namespace=""):
     my_map = "/map"
 
     position = None
-    quaternion = None
-    
-    while not rospy.is_shutdown():
-        try:
-            position, quaternion = tf_listener.lookupTransform(my_map, my_base_link, rospy.Time(0))
-        except:
-            continue
+    quaternion = None    
 
-        break
+    tf_listener.waitForTransform(my_map, my_base_link, rospy.Time(0), rospy.Duration(3.0))
+    position, quaternion = tf_listener.lookupTransform(my_map, my_base_link, rospy.Time(0))
 
     return position, tf.transformations.euler_from_quaternion(quaternion)
 

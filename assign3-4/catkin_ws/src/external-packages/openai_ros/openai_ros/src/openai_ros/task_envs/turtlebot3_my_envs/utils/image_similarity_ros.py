@@ -113,6 +113,7 @@ def fill(data, start_coords, fill_value, border_value, connectivity=8):
     
     return filled_data, borders
 
+
 def compare_current_map_to_actual_map(current_map_file_location, walkable_map_file):
     """
     Runs the map_server command to save the current image of the map runs comparison between the current
@@ -183,8 +184,28 @@ def get_number_of_almost_white_pixels(image_file):
     image = cv2.imread(file_location, cv2.IMREAD_GRAYSCALE)
     return np.sum(image >= 250)
 
+def get_number_of_almost_white_pixels_current_map(current_map_file_location):
+    # If map_saver could not save a map, return maximum difference
+    if not os.path.exists(current_map_file_location + ".pgm"):
+        return 1
+
+    current_map_image = cv2.imread(current_map_file_location + ".pgm", cv2.IMREAD_GRAYSCALE)
+    h, w = current_map_image.shape
+
+    # Rotate 90 degrees to the left by rotating 3 times to the right
+    current_map_image = np.rot90(current_map_image, k=3)
+
+    # Convert current estimate to binary
+    current_walkable_map = ((current_map_image==254) * 255).astype(np.uint8)
+
+    # Cropping final images
+    x1, y1, w1, h1 = cv2.boundingRect(current_walkable_map)
+    current_walkable_map = cv2.resize(current_walkable_map[y1:y1+h1, x1:x1+w1], (h, w))
+
+    return np.sum(current_walkable_map >= 250)
+
 if __name__ == "__main__":
-    # current_map_file_location = "/tmp/ros_merge_map"
-    # print("Image difference: {}".format(compare_current_map_to_actual_map(current_map_file_location, "turtlebot3_world_map_walkable.pgm")))
+    current_map_file_location = "/tmp/ros_merge_map"
+    print("Image difference: {}".format(compare_current_map_to_actual_map(current_map_file_location, "turtlebot3_world_map_walkable.pgm")))
     # generate_walkable_area_image("/home/jazz/Projects/FEUP/ProDEI/feup-ri/assign3-4/catkin_ws/src/external-packages/openai_ros/openai_ros/src/openai_ros/task_envs/turtlebot3_my_envs/utils/images/house-1.pgm", 1450, 1700)
-    print(get_number_of_almost_white_pixels("turtlebot3_world_map_walkable.pgm"))
+    # print(get_number_of_almost_white_pixels("turtlebot3_world_map_walkable.pgm"))

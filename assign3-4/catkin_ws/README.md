@@ -15,10 +15,6 @@ The `ENV` variable determines what gets launched during training. The default va
 Antoher useful variable is `STEP_DEBUG`. If this ENV variable is set with any value, then before each step the program will ask for input,
 so that we can observe what happens in each step.
 
-### Running
-
-
-
 ## Debugging a ROSPY script
 
 1. Install the ROS extension for VS Code
@@ -28,3 +24,9 @@ so that we can observe what happens in each step.
 1. Start the script using `rosrun`. Make sure you have a loop in the beginning of your Python script to wait for the debugger to attach.
 1. Run the debug configuration, and select the process corresponding to your script.
 1. Exit the loop and debug!
+
+Alternatively use a debugger such as `ptvsd` and attach a debug session:
+
+1. `pip install ptvsd` (Visual Studio Python debugger)
+1. Create a `Remote Attach` debug configuration on VSCode
+1. `python -m ptvsd --host localhost --port 5678 --wait <script>` waits until a session is attached and then runs the script.

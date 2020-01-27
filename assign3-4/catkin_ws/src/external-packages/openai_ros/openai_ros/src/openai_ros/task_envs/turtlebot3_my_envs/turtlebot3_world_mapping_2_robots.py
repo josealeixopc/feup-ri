@@ -19,7 +19,7 @@ from nav_msgs.msg import OccupancyGrid
 
 # Utils
 from utils.pseudo_collision_detector import PseudoCollisionDetector
-from utils.image_similarity_ros import compare_current_map_to_actual_map, get_number_of_almost_white_pixels
+from utils.image_similarity_ros import compare_current_map_to_actual_map, get_number_of_almost_white_pixels, get_number_of_almost_white_pixels_current_map
 from utils.relative_movement import get_robot_position_in_map
 from utils import scale, hector_path_save_publisher, simplify_occupancy_grid
 
@@ -207,6 +207,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
 
         # Start subscriber to /map to save it to file
         self._map_file_name = "/tmp/ros_merge_map"
+        self._map_updated_after_action = False
         rospy.Subscriber('map', OccupancyGrid, self._map_callback)
 
         # Logging episode information
@@ -255,6 +256,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         # Set to false Done, because its calculated asyncronously
         self._episode_done = False
         self._crashed = False
+        self._map_updated_after_action = False
 
         # (Re)Start GMapping, MapMerge and HectorSaver
         self._stop_gmapping()
@@ -264,6 +266,11 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         self._start_gmapping()
         self._start_map_merge()
         self._start_hector_saver()
+
+        # Wait for first map information and exploration result, so we don't get inflated rewards
+        while self.map_data is None:
+            rospy.sleep(0.1)
+        self._calculate_map_exploration(self.map_data)
 
     def _set_action(self, action):
         """
@@ -310,6 +317,8 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         for t in threads:
             t.join()
 
+        self._map_updated_after_action = False
+
         rospy.loginfo("Finished bot action settings.")
 
     def _get_obs(self):
@@ -319,7 +328,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         rospy.loginfo("Start Get Observation ==>")
         # Set stuff for the reward calculation
         # Set the exploration values (wait for map to be available)
-        while self.map_data is None:
+        while self.map_data is None or not self._map_updated_after_action:
             rospy.sleep(0.1)
 
         self._calculate_map_exploration(self.map_data)
@@ -360,10 +369,12 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         else:
             rospy.loginfo("No TurtleBot3 is close to a wall ==>")
 
-        # If the robot has mapped 90% of the estimated area
-        if self.current_max_explored_area >= 0.9 * self._num_white_pixels_to_explore:
+        estimated_white_pixels = get_number_of_almost_white_pixels_current_map(self._map_file_name)
+
+        # If the robot has mapped 99% of the estimated area
+        if estimated_white_pixels >= self._num_white_pixels_to_explore * 0.99:
             self._episode_done = True
-            rospy.logerr("Turtlebots have mapped 80 percent of the area.")
+            rospy.logerr("Turtlebots have mapped 99 percent of the area.")
 
         return self._episode_done
 
@@ -381,7 +392,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         area_reward_weight = 1.0
 
         if not done:
-            reward = (area_reward_base * area_reward_weight) * accuracy_reward_base - self.no_crash_reward_points
+            reward = area_reward_base * area_reward_weight - self.no_crash_reward_points
         else:
             if self._crashed:
                 reward = -100
@@ -481,6 +492,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
 
         # Save map_data
         self.map_data = map_data
+        self._map_updated_after_action = True
 
     ### OBSERVATION-RELATED METHODS
 
