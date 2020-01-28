@@ -386,6 +386,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
 
         # If we decrease the map difference, it should be rewarded.
         accuracy_reward_base = self.current_min_map_difference
+        accuracy_reward_weight = 1000.0
 
         # Maximum possible explored area is the area of our map, so we normalize what we have explored, to be between 0 and 1.
         area_reward_base = (self.current_max_explored_area - self.previous_max_explored_area) * 1.0 # Number of explored pixels
@@ -397,7 +398,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
             if self._crashed:
                 reward = - self.crash_reward_points
             else:
-                reward = 0
+                reward = accuracy_reward_base * accuracy_reward_weight
 
         rospy.loginfo("reward=" + str(reward))
         self.cumulated_reward += reward
