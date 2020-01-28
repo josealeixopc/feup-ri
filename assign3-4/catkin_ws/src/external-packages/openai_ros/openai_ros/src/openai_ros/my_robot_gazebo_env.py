@@ -44,15 +44,12 @@ class MyRobotGazeboEnv(gym.Env):
         """
         rospy.logdebug("START STEP OpenAIROS")
 
-        self.gazebo.unpauseSim()
         self._set_action(action)
-        # self.gazebo.pauseSim() # original
         obs = self._get_obs()
         done = self._is_done(obs)
         info = {}
         reward = self._compute_reward(obs, done)
         self.cumulated_episode_reward += reward
-        self.gazebo.pauseSim() # custom
         rospy.logdebug("END STEP OpenAIROS")
 
         return obs, reward, done, info
@@ -64,7 +61,6 @@ class MyRobotGazeboEnv(gym.Env):
         self._init_env_variables()
         self._update_episode()
         obs = self._get_obs()
-        self.gazebo.pauseSim() # added line
         rospy.logdebug("END Reseting RobotGazeboEnvironment")
         return obs
 
@@ -113,6 +109,7 @@ class MyRobotGazeboEnv(gym.Env):
     def _reset_sim(self):
         """Resets a simulation
         """
+        self.gazebo.pauseSim() # Custom
         rospy.logdebug("RESET SIM START")
         if self.reset_controls :
             rospy.logdebug("RESET CONTROLLERS")
