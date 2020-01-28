@@ -269,7 +269,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
 
         # Wait for first map information and exploration result, so we don't get inflated rewards
         while self.map_data is None:
-            rospy.sleep(0.1)
+            pass
         self._calculate_map_exploration(self.map_data)
 
     def _set_action(self, action):
@@ -329,7 +329,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         # Set stuff for the reward calculation
         # Set the exploration values (wait for map to be available)
         while self.map_data is None or not self._map_updated_after_action:
-            rospy.sleep(0.1)
+            pass
 
         self._calculate_map_exploration(self.map_data)
 
@@ -582,9 +582,8 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         return self._discretize_position_and_rotation_observation(position, rotation)
 
     def _get_map_exploration_obs(self):
-        rate = rospy.Rate(10) # 10Hz
         while(self.map_data is None):
-            rate.sleep()    # Wait for map data to become available
+            pass    # Wait for map data to become available
 
         return self._discretize_map_exploration_observation(self.map_data)
 
