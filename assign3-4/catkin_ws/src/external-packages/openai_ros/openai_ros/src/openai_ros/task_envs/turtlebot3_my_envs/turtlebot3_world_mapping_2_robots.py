@@ -604,8 +604,9 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
                     explored_area += 1
 
         if explored_area >= self.current_max_explored_area:
-            self.previous_max_explored_area = self.current_max_explored_area
             self.current_max_explored_area = explored_area
+
+        self.previous_max_explored_area = self.current_max_explored_area
 
     ### LOGGING RELATED METHODS
 
