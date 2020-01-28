@@ -4,6 +4,7 @@ import threading
 import sys
 
 import rospy
+import tf2_ros
 import rospkg
 import roslaunch
 import numpy as np
@@ -117,27 +118,24 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         high = np.full((num_laser_readings), self.max_laser_value)
         low = np.full((num_laser_readings), self.min_laser_value)
 
-        self.position_min_value = -20
-        self.position_max_value = 20
+        self.position_num_discrete_values = 40
 
-        self.rotation_min_value = -3
-        self.rotation_max_value = 3
+        self.rotation_num_discrete_values = 6
 
         self.simplified_grid_dimension = 4
-        self.simplified_grid_min_value = -10
-        self.simplified_grid_max_value = 10
+        self.simplified_grid_num_discrete_values = 40
 
         laser_scan_component_shape = [
             round(self.max_laser_value)] * (self.new_ranges * self.number_robots)
 
         position_component_shape = [
-            self.position_max_value - self.position_min_value] * (2 * self.number_robots)
+            self.position_num_discrete_values] * (2 * self.number_robots)
 
         rotation_component_shape = [
-            self.rotation_max_value - self.rotation_min_value] * (1 * self.number_robots)
+            self.rotation_num_discrete_values] * (1 * self.number_robots)
 
         map_exploration_component_shape = [
-            self.simplified_grid_max_value - self.simplified_grid_min_value] * self.simplified_grid_dimension * self.simplified_grid_dimension
+            self.simplified_grid_num_discrete_values] * self.simplified_grid_dimension * self.simplified_grid_dimension
 
         multi_discrete_shape = list(itertools.chain(laser_scan_component_shape,
                                                     position_component_shape,
@@ -212,6 +210,10 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
 
         # Logging episode information
         self._first_episode = True
+
+        # TF listener to get robots position
+        self.tf_buffer = tf2_ros.Buffer()
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
 
     ### OVERRIDES
 
@@ -371,10 +373,11 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
 
         estimated_white_pixels = get_number_of_almost_white_pixels_current_map(self._map_file_name)
 
-        # If the robot has mapped 99% of the estimated area
-        if estimated_white_pixels >= self._num_white_pixels_to_explore * 0.99:
+        # If the robot has mapped a percentage of the estimated area
+        area_percentage = 0.98
+        if estimated_white_pixels >= self._num_white_pixels_to_explore * area_percentage:
             self._episode_done = True
-            rospy.logerr("Turtlebots have mapped 99 percent of the area.")
+            rospy.logerr("Turtlebots have mapped {} of the area.".format(area_percentage))
 
         return self._episode_done
 
@@ -540,9 +543,9 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         # We rescale both values from an assumed scale of -10 to 10 (we clip them), to a new scale 0 to (max-min) values
         clipped_pos_x, clipped_pos_y = np.clip([pos_x, pos_y], -10, 10)
         scaled_pos_x = scale.scale_scalar(
-            clipped_pos_x, -10, 10, 0, self.position_max_value - self.position_min_value)
+            clipped_pos_x, -10, 10, 0, self.position_num_discrete_values)
         scaled_pos_y = scale.scale_scalar(
-            clipped_pos_y, -10, 10, 0, self.position_max_value - self.position_min_value)
+            clipped_pos_y, -10, 10, 0, self.position_num_discrete_values)
 
         # And we round the values
         discretized_pos_x = np.rint(scaled_pos_x)
@@ -554,7 +557,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
 
         # Now we rescale it to a scale from 0 to (max-min) values.
         scaled_rot_z = scale.scale_scalar(
-            rot_z, 0, 2*np.pi, 0, self.rotation_max_value - self.rotation_min_value)
+            rot_z, 0, 2*np.pi, 0, self.rotation_num_discrete_values)
 
         # And we round it
         discretized_rot_z = np.rint(scaled_rot_z)
@@ -568,7 +571,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
             map_data, self.simplified_grid_dimension)
 
         scaled_map_data = scale.scale_arr(
-            simplified_map_data, 0, 1, 0, self.simplified_grid_max_value - self.simplified_grid_min_value)
+            simplified_map_data, 0, 1, 0, self.simplified_grid_num_discrete_values)
         discretized_map_data = np.rint(scaled_map_data)
 
         return discretized_map_data.tolist()
@@ -578,7 +581,7 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         return self._discretize_laser_scan_observation(laser_scan, self.new_ranges)
 
     def _get_position_and_rotation_obs(self, namespace):
-        position, rotation = get_robot_position_in_map(namespace)
+        position, rotation = get_robot_position_in_map(self.tf_buffer, namespace)
         return self._discretize_position_and_rotation_observation(position, rotation)
 
     def _get_map_exploration_obs(self):

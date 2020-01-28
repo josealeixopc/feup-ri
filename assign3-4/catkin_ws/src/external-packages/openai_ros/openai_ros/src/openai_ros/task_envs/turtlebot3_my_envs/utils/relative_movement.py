@@ -1,5 +1,5 @@
 import rospy
-import tf
+import tf2_ros
 
 from geometry_msgs.msg import Twist
 import sys
@@ -11,34 +11,32 @@ def generate_move_forward(distance, linear_velocity, namespace=""):
     twist.angular.z = 0.0
     twist.linear.y = 0.0
 
-def get_robot_position_in_map(namespace=""):
-    return [0, 0, 0], [0, 0, 0]
-    tf_listener = tf.TransformListener()
-
-    my_base_link = namespace + "/base_link"
-    my_map = "/map"
+def get_robot_position_in_map(tf_buffer, namespace=""):
+    my_base_link = namespace[1:] + "/base_link" # with tf2, frames cannot start with "/" so we remove it
+    my_map = "map"
 
     position = None
-    quaternion = None
+    rotation = None
     
+    rate = rospy.Rate(10.0)
     while not rospy.is_shutdown():
-        t = rospy.Time(0)
 
         try:
-            tf_listener.waitForTransform(my_map, my_base_link, t, rospy.Duration(3.0))
-            position, quaternion = tf_listener.lookupTransform(my_map, my_base_link, t)
-        except:
+            trans = tf_buffer.lookup_transform(my_map, my_base_link, rospy.Time(0))
+
+            position = [trans.transform.translation.x,
+                        trans.transform.translation.y, 
+                        trans.transform.translation.z]
+
+            rotation = [trans.transform.rotation.x,
+                        trans.transform.rotation.y, 
+                        trans.transform.rotation.z]
+
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+            rate.sleep()
             continue
 
-        if position != None and quaternion != None:
-            break
-
-    rotation = None
-
-    try:
-        rotation = tf.transformations.euler_from_quaternion(quaternion)
-    except:
-        rotation = [0, 0, 0]
+        break
 
     return position, rotation
 
