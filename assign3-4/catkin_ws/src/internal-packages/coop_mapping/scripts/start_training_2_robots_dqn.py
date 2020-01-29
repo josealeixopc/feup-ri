@@ -22,7 +22,6 @@ import numpy as np
 VS_ROS_DEBUG = 0
 ENVS = ['TurtleBot3WorldMapping2RobotsTB3World-v0', 'TurtleBot3WorldMapping2RobotsHouse1-v0', 'TurtleBot3WorldMapping2RobotsHouse2-v0']
 EPISODES = 200
-MAX_EPISODE_STEPS = 500
 
 ENV_VALUES = ['dev-no-gazebo', 'dev-gazebo', 'deploy']
 
@@ -102,7 +101,7 @@ def train(environment):
         state = env.reset()
         state = np.reshape(state, [1, state_size])
         rospy.logwarn("Initial state ==> {}".format(state))
-        for time in range(MAX_EPISODE_STEPS):
+        while True:
             # env.render()
             action = agent.act(state)
             next_state, reward, done, _ = env.step(action)
@@ -129,4 +128,4 @@ def train(environment):
     
 if __name__ == '__main__':
     train(ENVS[0])
-    train(ENVS[1])
+    # train(ENVS[1])

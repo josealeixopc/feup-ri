@@ -372,10 +372,14 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         estimated_white_pixels = get_number_of_almost_white_pixels_current_map(self._map_file_name)
 
         # If the robot has mapped a percentage of the estimated area
-        area_percentage = 0.97
+        area_percentage = 0.90
         if estimated_white_pixels >= self._num_white_pixels_to_explore * area_percentage:
             self._episode_done = True
             rospy.logerr("Turtlebots have mapped {} of the area.".format(area_percentage))
+
+        rospy.logwarn("Turtlebots have explored {} pixels out of {} (a {} ratio).".format(estimated_white_pixels,
+                                                                                          self._num_white_pixels_to_explore, 
+                                                                                          estimated_white_pixels * 1.0 / self._num_white_pixels_to_explore))
 
         return self._episode_done
 
