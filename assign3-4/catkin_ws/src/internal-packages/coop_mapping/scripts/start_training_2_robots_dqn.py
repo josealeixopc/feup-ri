@@ -128,5 +128,5 @@ def train(environment):
     env.close()
     
 if __name__ == '__main__':
-    train(ENV[0])
-    train(ENV[1])
+    train(ENVS[0])
+    train(ENVS[1])
