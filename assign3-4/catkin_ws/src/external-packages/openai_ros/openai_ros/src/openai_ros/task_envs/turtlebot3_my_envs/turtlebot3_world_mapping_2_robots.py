@@ -47,15 +47,12 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
                                rel_path_from_package_to_file="src/openai_ros/task_envs/turtlebot3_my_envs/config",
                                yaml_file_name=yaml_config_file)
 
-        self.gazebo_launch_file_gui = rospy.get_param(
-            '/gazebo/launch_file_gui')
-        self.gazebo_launch_file_no_gui = rospy.get_param('/gazebo/launch_file_no_gui')
 
         # Depending on which environment we're in, decide to launch Gazebo with or without GUI.
-        gazebo_launch_file = self.gazebo_launch_file_gui
+        gazebo_launch_file = "start_empty_tb3_world.launch"
 
         if os.environ.get('ENV') == 'deploy' or os.environ.get('ENV') == 'dev-no-gazebo':
-            gazebo_launch_file = self.gazebo_launch_file_no_gui
+            gazebo_launch_file = "start_empty_tb3_world_no_gui.launch"
 
         ROSLauncher(rospackage_name="coop_mapping",
                     launch_file_name=gazebo_launch_file,

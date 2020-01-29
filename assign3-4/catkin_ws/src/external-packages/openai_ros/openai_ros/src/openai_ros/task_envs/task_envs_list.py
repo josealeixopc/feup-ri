@@ -196,7 +196,19 @@ def RegisterOpenAI_Ros_Env(task_env, timestep_limit_per_episode=10000):
         )
 
         # import our training environment
-        from openai_ros.task_envs.turtlebot3_my_envs import turtlebot3_world_mapping_2_robots
+        from openai_ros.task_envs.turtlebot3_my_envs import turtlebot3_world_mapping_2_robots_tb3_world
+    
+    elif task_env == 'TurtleBot3WorldMapping2RobotsHouse1-v0':
+
+        register(
+            id=task_env,
+            entry_point='openai_ros.task_envs.turtlebot3_my_envs.turtlebot3_world_mapping_2_robots_house_1:TurtleBot3WorldMapping2RobotsHouse1Env',
+            max_episode_steps=timestep_limit_per_episode,
+        )
+
+        # import our training environment
+        from openai_ros.task_envs.turtlebot3_my_envs import turtlebot3_world_mapping_2_robots_house_1
+
 
     elif task_env == 'WamvNavTwoSetsBuoys-v0':
 
