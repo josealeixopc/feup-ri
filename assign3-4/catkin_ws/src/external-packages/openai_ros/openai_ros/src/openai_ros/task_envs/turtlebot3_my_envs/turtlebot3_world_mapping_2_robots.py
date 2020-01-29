@@ -26,7 +26,7 @@ from utils import scale, hector_path_save_publisher, simplify_occupancy_grid
 
 
 class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRobotsEnv):
-    def __init__(self):
+    def __init__(self, yaml_config_file="turtlebot3_world_mapping.yaml"):
         """
         This Task Env is designed for having two TurtleBot3 robots in the turtlebot3 world closed room with columns.
 
@@ -42,20 +42,24 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
                                                " DOESNT exist, execute: mkdir -p " + ros_ws_abspath + \
                                                "/src;cd " + ros_ws_abspath + ";catkin_make"
 
+        # Load Params from the desired Yaml file
+        LoadYamlFileParamsTest(rospackage_name="openai_ros",
+                               rel_path_from_package_to_file="src/openai_ros/task_envs/turtlebot3_my_envs/config",
+                               yaml_file_name=yaml_config_file)
+
+        self.gazebo_launch_file_gui = rospy.get_param(
+            '/gazebo/launch_file_gui')
+        self.gazebo_launch_file_no_gui = rospy.get_param('/gazebo/launch_file_no_gui')
+
         # Depending on which environment we're in, decide to launch Gazebo with or without GUI.
-        gazebo_launch_file = "start_empty_tb3_world.launch"
+        gazebo_launch_file = self.gazebo_launch_file_gui
 
         if os.environ.get('ENV') == 'deploy' or os.environ.get('ENV') == 'dev-no-gazebo':
-            gazebo_launch_file = "start_empty_tb3_world_no_gui.launch"
+            gazebo_launch_file = self.gazebo_launch_file_no_gui
 
         ROSLauncher(rospackage_name="coop_mapping",
                     launch_file_name=gazebo_launch_file,
                     ros_ws_abspath=ros_ws_abspath)
-
-        # Load Params from the desired Yaml file
-        LoadYamlFileParamsTest(rospackage_name="openai_ros",
-                               rel_path_from_package_to_file="src/openai_ros/task_envs/turtlebot3_my_envs/config",
-                               yaml_file_name="turtlebot3_world_mapping.yaml")
 
         # Here we will add any init functions prior to starting the MyRobotEnv
         super(TurtleBot3WorldMapping2RobotsEnv, self).__init__(ros_ws_abspath,
@@ -89,8 +93,6 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         self.min_range = rospy.get_param('/turtlebot3/min_range')
         self.max_laser_value = rospy.get_param('/turtlebot3/max_laser_value')
         self.min_laser_value = rospy.get_param('/turtlebot3/min_laser_value')
-        self.max_linear_aceleration = rospy.get_param(
-            '/turtlebot3/max_linear_aceleration')
 
         """
         An observation is a MultiDiscrete element, with 4 components.
@@ -150,10 +152,6 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
                       str(self.observation_space))
 
         # Rewards
-        self.forwards_reward = rospy.get_param("/turtlebot3/forwards_reward")
-        self.turn_reward = rospy.get_param("/turtlebot3/turn_reward")
-        self.end_episode_points = rospy.get_param(
-            "/turtlebot3/end_episode_points")
 
         self.no_crash_reward_points = rospy.get_param(
             "/turtlebot3/no_crash_reward_points")
@@ -270,8 +268,10 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         self._start_hector_saver()
 
         # Wait for first map information and exploration result, so we don't get inflated rewards
+        rate = rospy.Rate(10.0)
         while self.map_data is None:
-            pass
+            rate.sleep()
+
         self._calculate_map_exploration(self.map_data)
 
     def _set_action(self, action):
@@ -330,8 +330,9 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         rospy.loginfo("Start Get Observation ==>")
         # Set stuff for the reward calculation
         # Set the exploration values (wait for map to be available)
+        rate = rospy.Rate(10.0)
         while self.map_data is None or not self._map_updated_after_action:
-            pass
+            rate.sleep()
 
         self._calculate_map_exploration(self.map_data)
 
@@ -585,8 +586,9 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         return self._discretize_position_and_rotation_observation(position, rotation)
 
     def _get_map_exploration_obs(self):
+        rate = rospy.Rate(10.0)
         while(self.map_data is None):
-            pass    # Wait for map data to become available
+            rate.sleep()    # Wait for map data to become available
 
         return self._discretize_map_exploration_observation(self.map_data)
 

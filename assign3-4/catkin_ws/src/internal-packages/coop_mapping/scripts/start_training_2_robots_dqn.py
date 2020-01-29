@@ -20,7 +20,7 @@ import dqn
 import numpy as np
 
 VS_ROS_DEBUG = 0
-ENV_NAME = 'TurtleBot3WorldMapping2Robots-v0'
+ENV_NAME = 'TurtleBot3WorldMapping2RobotsTB3World-v0'
 EPISODES = 200
 MAX_EPISODE_STEPS = 1000
 
