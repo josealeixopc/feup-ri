@@ -365,10 +365,11 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
 
         if self._episode_done:
             rospy.logerr("A TurtleBot3 is Too Close to wall==>")
-            self.save_episode_info()
         else:
             rospy.loginfo("No TurtleBot3 is close to a wall ==>")
 
+        self._save_map_image(self.map_data)
+        
         estimated_white_pixels = get_number_of_almost_white_pixels_current_map(self._map_file_name)
 
         # If the robot has mapped a percentage of the estimated area
@@ -380,6 +381,9 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         rospy.logwarn("Turtlebots have explored {} pixels out of {} (a {} ratio).".format(estimated_white_pixels,
                                                                                           self._num_white_pixels_to_explore, 
                                                                                           estimated_white_pixels * 1.0 / self._num_white_pixels_to_explore))
+
+        if self._episode_done:
+            self.save_episode_info()
 
         return self._episode_done
 
