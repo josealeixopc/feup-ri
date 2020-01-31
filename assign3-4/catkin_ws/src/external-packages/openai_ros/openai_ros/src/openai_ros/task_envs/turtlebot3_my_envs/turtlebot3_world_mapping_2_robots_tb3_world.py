@@ -16,3 +16,5 @@ class TurtleBot3WorldMapping2RobotsTB3WorldEnv(turtlebot3_world_mapping_2_robots
         os.environ["SECOND_TB3_Z"] = "0.0"
 
         super(TurtleBot3WorldMapping2RobotsTB3WorldEnv, self).__init__("turtlebot3_world_mapping_default.yaml")
+
+        self.actual_map_file = "turtlebot3_world_map_walkable.pgm"
