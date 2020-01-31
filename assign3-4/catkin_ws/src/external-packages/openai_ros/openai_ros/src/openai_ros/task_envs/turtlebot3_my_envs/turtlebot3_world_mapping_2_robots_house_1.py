@@ -15,4 +15,4 @@ class TurtleBot3WorldMapping2RobotsHouse1Env(turtlebot3_world_mapping_2_robots.T
         os.environ["SECOND_TB3_Y"] = "0.0"
         os.environ["SECOND_TB3_Z"] = "0.0"
 
-        super(TurtleBot3WorldMapping2RobotsHouse1Env, self).__init__("turtlebot3_world_mapping_house_1.yaml")
+        super(TurtleBot3WorldMapping2RobotsHouse1Env, self).__init__("turtlebot3_world_mapping_default.yaml")
