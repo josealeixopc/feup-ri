@@ -2,5 +2,5 @@
     <param name="use_sim_time" value="true"/>
     
     <!-- Launch the training system -->
-    <node pkg="coop_mapping" name="turtlebot3_world_mapping_2_robots_dqn" type="start_training_2_robots_dqn.py" output="log"/>
+    <node pkg="coop_mapping" name="start_training_2_robots_dqn" type="start_training_2_robots_dqn.py" output="log"/>
 </launch>

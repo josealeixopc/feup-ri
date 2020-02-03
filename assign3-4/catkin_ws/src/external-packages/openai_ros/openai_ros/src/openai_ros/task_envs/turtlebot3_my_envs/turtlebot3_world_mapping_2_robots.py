@@ -257,11 +257,15 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         # (Re)Start GMapping, MapMerge and HectorSaver
         self._stop_gmapping()
         self._stop_map_merge()
-        self._stop_hector_saver()
+
+        if os.environ.get('TEST') is not None:
+            self._stop_hector_saver()
 
         self._start_gmapping()
         self._start_map_merge()
-        self._start_hector_saver()
+        
+        if os.environ.get('TEST') is not None:
+            self._start_hector_saver()
 
         # Wait for first map information and exploration result, so we don't get inflated rewards
         rate = rospy.Rate(10.0)
@@ -625,12 +629,13 @@ class TurtleBot3WorldMapping2RobotsEnv(turtlebot3_two_robots_env.TurtleBot3TwoRo
         # **WARNING**: hector_path_save must allow some time for the ROS service to execute
         # careful when moving this around, to keep the sleep
 
-        # Save trajectory of the robots
-        for ns in self.robot_namespaces:
-            hector_path_save_publisher.publish_once(ns)
+        if os.environ.get('TEST') is not None:
+            # Save trajectory of the robots
+            for ns in self.robot_namespaces:
+                hector_path_save_publisher.publish_once(ns)
 
-        # Becaseu hector_saver needs some time to run, before we delete its nodes
-        rospy.sleep(1)
+            # Becaseu hector_saver needs some time to run, before we delete its nodes
+            rospy.sleep(1)
 
         # Save current map representation as an image
         self._save_map_image(self.map_data)
