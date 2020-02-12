@@ -4,6 +4,7 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
+import json
 
 
 Y_REWARDS = 'r'
@@ -26,19 +27,52 @@ def smooth_moving_average(x, y, window_size):
 
 if __name__ == '__main__':
 
-    lengths = [3, 3, 2, 3, 10, 9, 6, 5, 4, 4, 11, 13, 2, 5, 4, 3, 4, 7, 14, 10, 5, 8, 37, 4, 4, 9, 10, 16, 30, 4, 4, 12, 5, 9, 7, 17, 11, 34, 24, 14, 7, 146, 3, 73, 49, 42, 72, 109, 27, 79, 81, 2, 2, 4, 413, 177, 5, 361, 2, 2, 2, 2, 3, 7, 11, 2, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 199, 26, 5, 15, 4, 13, 58, 79, 183, 101, 6, 12, 7, 2, 2, 2, 49, 46, 11, 40, 7, 108, 161, 3, 7, 30, 11, 3, 4, 2, 3, 7, 3, 3, 5, 27, 160, 62, 5, 31, 13, 134, 38, 49, 22, 9, 27, 55, 12, 57, 47, 99, 8, 33, 32, 53, 28, 19, 13, 91, 82, 33, 31, 46, 225, 61, 30, 20, 28, 28, 147, 35]
+    episodes_0_200_file = "/home/jazz/Documents/ri-results/tb3_world_800_episodes_85_percent/2020-01-29-17-45-21-dqn-0-200/openaigym.episode_batch.0.26249.stats.json"
+    episodes_200_400_file = "/home/jazz/Documents/ri-results/tb3_world_800_episodes_85_percent/2020-01-30-20-33-28-dqn-200-400/openaigym.episode_batch.0.28736.stats.json"
+    episodes_400_800_file = "/home/jazz/Documents/ri-results/tb3_world_800_episodes_85_percent/2020-02-03-13-12-56-dqn-400-800/openaigym.episode_batch.0.1379.stats.json"
 
-    rewards = [198.0, -101.0, -100.5, -101.0, 424.5, 326.73997167862257, 290.5, 256.15706632070027, 153.5, -101.5, 518.5626746667144, 651.1022425347834, -100.5, 227.05506587320906, 71.5, -101.0, -101.5, 424.0, 461.6234113880631, 533.5929350719606, -102.0, 128.63203162752018, 1125.6067600100716, 202.5, -101.5, 526.491496259932, 326.08120995426975, 605.031939485827, 838.3038800922743, -101.5, 157.5, 549.5, 242.98406916575846, 319.2822964303786, 352.5142185501322, 486.61668429403176, 704.7068550803756, 1278.6742736889028, 472.0802291925147, 749.9575360785014, 311.1103570077056, 1545.4162765461856, -101.0, 1284.3394421560033, 1593.1609698337822, 583.1810789630101, 1134.8467700847714, 1547.0593468521186, 980.4568175618815, 547.8776729336655, 1469.8369210092903, -100.5, -100.5, 78.5, 952.0, 1625.4344111366713, 277.25606055786477, 1336.0, -100.5, -100.5, -100.5, -100.5, -100.81781995511825, 680.2011184046876, 597.3943185038127, -100.5, -101.0, -100.5, -100.5, -100.5, -100.5, -100.5, -100.5, -100.5, -100.5, -100.5, -100.5, -100.5, 2225.7209698450642, 666.2278434036775, 263.5023813977781, 650.5791284121515, -101.5, 450.6004100230009, 660.6499714391794, 755.3608184228121, 2134.5907375419492, 943.4233192764482, 319.9760737880854, 878.5, 458.5557641761802, -100.5, -100.5, -100.5, 952.2082920183366, 993.4907180722814, 343.35434846243373, 1581.7257986421666, 316.248990598921, 1344.6052565954496, 2465.436301473786, -101.0, 617.8962727804229, 771.233496252597, 328.79682403376876, -101.0, 179.9388964875012, -100.5, -101.0, 360.39668621887324, 68.0, -101.0, 236.0, 977.5846860736965, 1362.093059618297, 709.3146790842886, 262.0549733216404, 751.796005736612, 1070.285801365902, 1369.3953197635951, 988.8829642100113, 889.8284862646133, 995.0253926131609, 348.51010549454867, 947.603743936829, 907.3426941587512, 320.0903979171508, 1182.7046184296703, 1558.331109571844, 1120.3155644406718, 509.1128081436822, 994.4605063086838, 758.1694213256781, 1132.4208909226413, 877.3320181676892, 669.9651389384062, 730.6973553702998, 1550.6770835312477, 1558.9173721620618, 850.2908831858338, 672.7905474698728, 1538.6076481951886, 1967.9476285246187, 1163.0436267019288, 1072.9007291908401, 1263.4107137342307, 475.06446949862493, 895.47941248659, 1785.103857161586, 1377.68014997333]
+    with open(episodes_0_200_file) as f:
+        episodes_0_200_json = json.load(f)
+    
+    with open(episodes_200_400_file) as f:
+        episodes_200_400_json = json.load(f)
+
+    with open(episodes_400_800_file) as f:
+        episodes_400_800_json = json.load(f)
+
+
+    all_rewards = episodes_0_200_json['episode_rewards'] + episodes_200_400_json['episode_rewards'] # + episodes_400_800_json['episode_rewards']
+    all_lengths = episodes_0_200_json['episode_lengths'] + episodes_200_400_json['episode_lengths'] # + episodes_400_800_json['episode_lengths']
 
     plt.style.use('ggplot')
 
-    x, y = smooth_moving_average(range(len(rewards)), rewards, 5)
+    x, y = smooth_moving_average(range(len(all_rewards)), all_rewards, 10)
+
 
     plt.plot(x, y, linewidth=1)
     plt.xlim(left=0)
-    plt.yticks([])
     plt.xlabel("Number of Episodes")
     plt.ylabel("Rewards per Episode")
     plt.tight_layout()
-    plt.savefig("rewards.eps", format='eps')
+    ax = plt.gca()
+    ratio = 0.4
+    xleft, xright = ax.get_xlim()
+    ybottom, ytop = ax.get_ylim()
+    ax.set_aspect(abs((xright-xleft)/(ybottom-ytop))*ratio)
+    plt.savefig("rewards.eps", format='eps', bbox_inches='tight')
+    plt.show()
+
+    x, y = smooth_moving_average(range(len(all_lengths)), all_lengths, 10)
+
+    plt.plot(x, y, linewidth=1)
+    plt.xlim(left=0)
+    plt.xlabel("Number of Episodes")
+    plt.ylabel("Timesteps per Episode")
+    plt.tight_layout()
+    ax = plt.gca()
+    ratio = 0.4
+    xleft, xright = ax.get_xlim()
+    ybottom, ytop = ax.get_ylim()
+    ax.set_aspect(abs((xright-xleft)/(ybottom-ytop))*ratio)
+    plt.savefig("timesteps.eps", format='eps', bbox_inches='tight')
     plt.show()

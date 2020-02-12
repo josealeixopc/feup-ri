@@ -21,7 +21,7 @@ import numpy as np
 
 VS_ROS_DEBUG = 0
 ENVS = ['TurtleBot3WorldMapping2RobotsTB3World-v0', 'TurtleBot3WorldMapping2RobotsHouse1-v0', 'TurtleBot3WorldMapping2RobotsHouse2-v0']
-EPISODES = 200
+EPISODES = 10
 
 ENV_VALUES = ['dev-no-gazebo', 'dev-gazebo', 'deploy']
 

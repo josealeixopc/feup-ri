@@ -4,14 +4,14 @@
     
     <!-- TURTLEBOT3_0 -->
     <arg name="first_tb3" default="tb3_0"/>
-    <arg name="first_tb3_x_pos" default="0.5"/>
+    <arg name="first_tb3_x_pos" default="2.0"/>
     <arg name="first_tb3_y_pos" default="0.0"/>
     <arg name="first_tb3_z_pos" default=" 0.0"/>
     <arg name="first_tb3_yaw" default="0.0"/>
 
     <!-- TURTLEBOT3_1 -->
     <arg name="second_tb3" default="tb3_1"/>
-    <arg name="second_tb3_x_pos" default="-0.5"/>
+    <arg name="second_tb3_x_pos" default="-2.0"/>
     <arg name="second_tb3_y_pos" default="0.0"/>
     <arg name="second_tb3_z_pos" default="0.0"/>
     <arg name="second_tb3_yaw" default="0.0"/>
@@ -47,16 +47,7 @@
     
     <include file="$(find coop_mapping)/launch/init_2_robots_mapping.launch">
         <arg name="first_tb3"  value="$(arg first_tb3)"/>
-        <arg name="first_tb3_x_pos" value="$(arg first_tb3_x_pos)"/>
-        <arg name="first_tb3_y_pos" value="$(arg first_tb3_y_pos)"/>
-        <arg name="first_tb3_z_pos" value="$(arg first_tb3_z_pos)"/>
-        <arg name="first_tb3_yaw"   value="$(arg first_tb3_yaw)"/>
-
         <arg name="second_tb3"  value="$(arg second_tb3)"/>
-        <arg name="second_tb3_x_pos" value="$(arg second_tb3_x_pos)"/>
-        <arg name="second_tb3_y_pos" value="$(arg second_tb3_y_pos)"/>
-        <arg name="second_tb3_z_pos" value="$(arg second_tb3_z_pos)"/>
-        <arg name="second_tb3_yaw"   value="$(arg second_tb3_yaw)"/>   
     </include>
     
     <!-- Launch hector_saver for both robots. -->
