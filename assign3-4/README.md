@@ -8,6 +8,7 @@ Code for paper "Reinforcement Learning in Navigation and Cooperative Mapping".
 
 - José Aleixo Cruz
 - Armando Sousa
+- Henrique Lopes Cardoso
 - Luís Paulo Reis
 
 Intelligent Robotics @[FEUP](https://www.fe.up.pt)
