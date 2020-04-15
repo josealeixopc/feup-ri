@@ -5,7 +5,7 @@ A repository for the Intelligent Robotics (RI) course of [FEUP](https://www.fe.u
 
 Available at [Github](https://github.com/jazzchipc/feup-ri/).
 
-The source code and README of the final assignment are in the `assign3-4` directory.
+The source code and README for the paper "Reinforcement Learning in Navigation and Cooperative Mapping" from ICARSC 2020 are in the `assign3-4` directory.
 
 ## IMPORTANT
 
